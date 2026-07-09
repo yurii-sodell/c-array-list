@@ -7,7 +7,7 @@
 #include "array_list_t_private.h"
 
 /*============================= BASIC CHECK BEFORE ANY OPERATION =============================*/
-arr_status arr_check_for_errors(array_list_t* arr, int aftermalloc) {
+arr_status arr_verify_array(array_list_t* arr, int aftermalloc) {
     arr_status status = aftermalloc == 1 ? ARR_MEMORY_FAULT : ARR_IS_NULL;
     if (arr == NULL) return status;
     if (arr->values == NULL) return status;
@@ -15,46 +15,61 @@ arr_status arr_check_for_errors(array_list_t* arr, int aftermalloc) {
     return ARR_OK;
 };
 
-void arr_handle_status(arr_status st) {
+void arr_handle_internal_operation_status(arr_status st, char* additional_information) {
     if (st == ARR_OK) return;
     char* message = "";
     switch (st) {
         case ARR_OUT_OF_BOUNDS:
-            message = "Array out of bounds";
+            message = "Error: Array out of bounds";
             break;
         case ARR_IS_NULL:
-            message = "Array is NULL";
+            message = "Error: Array is NULL";
             break;
         case ARR_MEMORY_FAULT:
-            message = "Memory allocation went wrong";
+            message = "Error: Memory allocation went wrong";
             break;
         case ARR_LENGTH_IS_CORRUPTED:
-            message = "Length of array is corrupted. Something went terribly wrong!";
+            message = "Error: Length of array is corrupted. Something went terribly wrong!";
             break;
         case ARR_INCONSISTENT_TYPE_PROVIDED:
-            message = "Type of array and type of provided value are defer.";
+            message = "Error: Type of array and type of provided value are defer.";
             break;
         case ARR_CUSTOM_BUT_TYPE_NOT_SPECIFIED:
-            message = "Array is custom, but type is not specified.";
+            message = "Error: Array is custom, but type is not specified.";
             break;
         case ARR_CUSTOM_TYPE_IS_NOT_REGISTERED:
-            message = "Custom type is not registered.";
+            message = "Error: Custom type is not registered.";
             break;
         case ARR_CUSTOM_REGISTER_REACHED_MAX_AMOUNT:
-            message = "Custom type register reached max amount.";
+            message = "Error: Custom type register reached max amount.";
             break;
         case ARR_CUSTOM_TYPE_IS_ALREADY_REGISTERED:
-            message = "Custom type is already registered.";
+            message = "Error: Custom type is already registered.";
             break;
         case ARR_VALUE_IS_NULL:
-            message = "Provided value is NULL";
+            message = "Error: Provided value is NULL";
+            break;
+            message = "Error: Provided value is NULL";
+            break;
+        case ARR_PRINT_IS_NOT_REGISTERED_FOR_THAT_TYPE:
+            message = "Error: print function is not registered for this type";
+            break;
+        case ARR_EQUALS_IS_NOT_REGISTERED_FOR_THAT_TYPE:
+            message = "Error: equals function is not registered for this type";
             break;
         default:
             message = "Unknown error has occured in array.";
             break;
     }
-    printf("\n%s", message);
+
+    if (additional_information == NULL) {
+        fprintf(stderr, "\n%s", message);
+    } else {
+        fprintf(stderr, "\n%s: %s", additional_information, message);
+    }
 }
+
+void arr_handle_status(arr_status st) { arr_handle_internal_operation_status(st, NULL); }
 /* ============================= CREATION OF ARRAY =============================*/
 /* =================== PRIVATE FOR USER. SHARED WITH CUSTOM. ===================*/
 array_list_t* arr_allocate(ARR_TYPE DataType, int capacity, int element_size) {
@@ -126,7 +141,10 @@ arr_status check_memory_allocation(array_list_t* arr) {
 
 /*============================================================================*/
 
-void free_using_container(arr_value av) { free(av.value); }
+void free_using_container(arr_value av) {
+    free(av.value);
+    if (av.type == ARR_CUSTOM) free(av.custom_type);
+}
 
 int map_sizes[types_supported];
 void arr_init_map_sizes() {
@@ -146,7 +164,7 @@ array_list_t* arr_create(ARR_TYPE DataType) {
         return NULL;
     }
     array_list_t* arr = arr_allocate(DataType, arr_basic_capacity, map_sizes[DataType]);
-    if (arr == NULL) arr_handle_status(ARR_MEMORY_FAULT);
+    if (arr == NULL) arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create");
     return arr;
 }
 
@@ -311,7 +329,7 @@ int arr_equals(array_list_t* arr1, array_list_t* arr2) {
 /*============================= GETTING VALUE =============================*/
 void* arr_get_address(array_list_t* arr, int index) {
     if (index < 0 || index >= arr->length) {
-        arr_handle_status(ARR_OUT_OF_BOUNDS);
+        arr_handle_internal_operation_status(ARR_OUT_OF_BOUNDS, "Array get");
         return NULL;
     }
     return arr->values + index * arr->size_of_one_element;
@@ -319,11 +337,13 @@ void* arr_get_address(array_list_t* arr, int index) {
 
 arr_value arr_get_int(array_list_t* arr, int index) {
     arr_value val = {0};
-    arr_status st = arr_check_for_errors(arr, not_after_malloc);
-    arr_handle_status(st);
-    if (st != ARR_OK) return val;
+    arr_status st = arr_verify_array(arr, not_after_malloc);
+    if (st != ARR_OK) {
+        arr_handle_internal_operation_status(st, "Array get int");
+        return val;
+    }
     if (arr->type != ARR_INT) {
-        arr_handle_status(ARR_INCONSISTENT_TYPE_PROVIDED);
+        arr_handle_internal_operation_status(ARR_INCONSISTENT_TYPE_PROVIDED, "Array get int");
         return val;
     }
     void* addres = arr_get_address(arr, index);
@@ -334,11 +354,11 @@ arr_value arr_get_int(array_list_t* arr, int index) {
 
 arr_value arr_get_char(array_list_t* arr, int index) {
     arr_value val = {0};
-    arr_status st = arr_check_for_errors(arr, not_after_malloc);
-    arr_handle_status(st);
+    arr_status st = arr_verify_array(arr, not_after_malloc);
+    arr_handle_internal_operation_status(st, "Array get char");
     if (st != ARR_OK) return val;
     if (arr->type != ARR_CHAR) {
-        arr_handle_status(ARR_INCONSISTENT_TYPE_PROVIDED);
+        arr_handle_internal_operation_status(ARR_INCONSISTENT_TYPE_PROVIDED, "Array get char");
         return val;
     }
     void* addres = arr_get_address(arr, index);
@@ -358,9 +378,9 @@ int arr_init_map_get() {
 
 /*=============================== SORTING ==================================*/
 arr_status arr_sort(array_list_t* arr1, int(sorting_algorithm)(const void* a, const void* b)) {
-        arr_status st = arr_check_for_errors(arr1, not_after_malloc);
-        if (st != ARR_OK) st;
-        qsort(arr1->values, arr1->length, arr1->size_of_one_element, sorting_algorithm);
+    arr_status st = arr_verify_array(arr1, not_after_malloc);
+    if (st != ARR_OK) st;
+    qsort(arr1->values, arr1->length, arr1->size_of_one_element, sorting_algorithm);
 };
 
 void arr_init() {
