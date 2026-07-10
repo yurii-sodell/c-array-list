@@ -20,19 +20,20 @@ void arr_handle_internal_operation_status(arr_status st, char* additional_inform
     char* message = "";
     switch (st) {
         case ARR_OUT_OF_BOUNDS:
-            message = "Error: Array out of bounds";
+            message = "Error: Array index out of bounds.";
             break;
         case ARR_IS_NULL:
-            message = "Error: Array is NULL";
+            message = "Error: Array is NULL.";
             break;
         case ARR_MEMORY_FAULT:
-            message = "Error: Memory allocation went wrong";
+            message = "Error: Memory allocation went wrong.";
             break;
         case ARR_LENGTH_IS_CORRUPTED:
             message = "Error: Length of array is corrupted. Something went terribly wrong!";
             break;
         case ARR_INCONSISTENT_TYPE_PROVIDED:
-            message = "Error: Type of array and type of provided value are defer.";
+            message =
+                "Error: Type of the array does not correspond to the type of the provided value.";
             break;
         case ARR_CUSTOM_BUT_TYPE_NOT_SPECIFIED:
             message = "Error: Array is custom, but type is not specified.";
@@ -47,15 +48,18 @@ void arr_handle_internal_operation_status(arr_status st, char* additional_inform
             message = "Error: Custom type is already registered.";
             break;
         case ARR_VALUE_IS_NULL:
-            message = "Error: Provided value is NULL";
-            break;
-            message = "Error: Provided value is NULL";
+            message = "Error: Provided array value is NULL.";
             break;
         case ARR_PRINT_IS_NOT_REGISTERED_FOR_THAT_TYPE:
             message = "Error: print function is not registered for this type";
             break;
         case ARR_EQUALS_IS_NOT_REGISTERED_FOR_THAT_TYPE:
-            message = "Error: equals function is not registered for this type";
+            message =
+                "Error: comparing function (expected return values: -1, 0, 1) is not registered "
+                "for this type";
+            break;
+        case ARR_SIZES_OF_ARRAY_ELEMENT_AND_PROVIDED_ARE_DEFER:
+            message = "Error: sizes of provided element and size of one array element are defer";
             break;
         default:
             message = "Unknown error has occured in array.";
@@ -79,7 +83,7 @@ array_list_t* arr_allocate(ARR_TYPE DataType, int capacity, int element_size) {
     arr->length = 0;
     arr->type = DataType;
     arr->size_of_one_element = element_size;
-    arr->values = malloc(capacity);
+    arr->values = calloc(capacity, element_size);
     if (arr->values == NULL) return NULL;
     return arr;
 }
@@ -127,15 +131,17 @@ arr_value using_float(float f) {
 
 /* =================== PRIVATE FOR USER. SHARED WITH CUSTOM. ===================*/
 arr_status check_memory_allocation(array_list_t* arr) {
-    int len = arr->length + 1;
-    int expected_capcaity = len * arr->size_of_one_element * 2;
+    int expected_capcaity = (arr->length + 10) * arr->size_of_one_element;
     while (arr->capacity < expected_capcaity) {
         int new_cap = arr->capacity / 2 + arr->capacity;
+   
         void* tmp = realloc(arr->values, new_cap);
-        if (tmp != NULL) return ARR_MEMORY_FAULT;
+        
+        if (tmp == NULL) return ARR_MEMORY_FAULT;
         arr->values = tmp;
         arr->capacity = new_cap;
     }
+    
     return ARR_OK;
 }
 
@@ -154,62 +160,6 @@ void arr_init_map_sizes() {
     map_sizes[ARR_DOUBLE] = sizeof(double);
     map_sizes[ARR_FLOAT] = sizeof(float);
 }
-
-/* =========== PUBLIC ===========*/
-array_list_t* arr_create(ARR_TYPE DataType) {
-    if (DataType == ARR_CUSTOM) {
-        fprintf(
-            stderr,
-            "Wrong arr type is provided. For custom types use arr_create_custom(). NULL returned");
-        return NULL;
-    }
-    array_list_t* arr = arr_allocate(DataType, arr_basic_capacity, map_sizes[DataType]);
-    if (arr == NULL) arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create");
-    return arr;
-}
-
-/*============================= PRINTIING OF ARRAY =============================*/
-/* ================ PRIVATE ================*/
-void itterate_string(array_list_t* arr) {
-    char** target = (char**)arr->values;
-    for (size_t i = 0; i < arr->length; i++) {
-        printf("\n%s", target[i]);
-    }
-}
-void itterate_int(array_list_t* arr) {
-    int* list = (int*)arr->values;
-    for (size_t i = 0; i < arr->length; i++) {
-        printf("\n%u", list[i]);
-    }
-}
-void itterate_char(array_list_t* arr) {
-    char* list = (char*)arr->values;
-    for (size_t i = 0; i < arr->length; i++) {
-        printf("\n%c", list[i]);
-    }
-}
-void itterate_double(array_list_t* arr) {
-    double* list = (double*)arr->values;
-    for (size_t i = 0; i < arr->length; i++) {
-        printf("\n%f", list[i]);
-    }
-}
-void itterate_float(array_list_t* arr) {
-    float* list = (float*)arr->values;
-    for (size_t i = 0; i < arr->length; i++) {
-        printf("\n%f", list[i]);
-    }
-}
-void (*arr_print_map[types_supported])(array_list_t* arr);
-arr_status arr_init_map_prints() {
-    arr_print_map[ARR_INT] = itterate_int;
-    arr_print_map[ARR_CHAR] = itterate_char;
-    arr_print_map[ARR_STRINGS] = itterate_string;
-    arr_print_map[ARR_DOUBLE] = itterate_double;
-    arr_print_map[ARR_FLOAT] = itterate_float;
-}
-/* ================ PUBLIC ================*/
-arr_status arr_print(array_list_t* arr) { arr_print_map[arr->type](arr); }
 
 /*============================= ADDING VALUE TO ARRAY =============================*/
 /* ================== PRIVATE ================== */
@@ -243,7 +193,238 @@ arr_status arr_init_map_adds() {
     arr_add_map[ARR_FLOAT] = add_float;
 }
 
+/* =========== PUBLIC ===========*/
+array_list_t* arr_create(ARR_TYPE DataType) {
+    if (DataType == ARR_CUSTOM) {
+        fprintf(
+            stderr,
+            "Wrong arr type is provided. For custom types use arr_create_custom(). NULL returned");
+        return NULL;
+    }
+    array_list_t* arr = arr_allocate(DataType, arr_basic_capacity, map_sizes[DataType]);
+    if (arr == NULL) arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create");
+    return arr;
+}
+
+array_list_t* arr_create_from_ints(int ints[], int len) {
+    size_t element_size = map_sizes[ARR_INT];
+    array_list_t* arr = arr_allocate(ARR_INT, arr_basic_capacity, element_size);
+    if (arr == NULL) {
+        arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create from ints");
+        return NULL;
+    }
+    for (int i = 0; i < len; i++) {
+        arr_add(arr, using_int(ints[i]));
+    }
+    return arr;
+}
+
+array_list_t* arr_create_from_chars(char chars[], int len) {
+    array_list_t* arr = arr_allocate(ARR_CHAR, arr_basic_capacity, map_sizes[ARR_CHAR]);
+    if (arr == NULL) {
+        arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create from ints");
+        return NULL;
+    }
+    for (int i = 0; i < len; i++) {
+        arr_add(arr, using_char(chars[i]));
+    }
+    return arr;
+}
+
+array_list_t* arr_create_from_strings(char* strings[], int len) {
+    array_list_t* arr = arr_allocate(ARR_STRINGS, arr_basic_capacity, map_sizes[ARR_STRINGS]);
+    if (arr == NULL) {
+        arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create from ints");
+        return NULL;
+    }
+    for (int i = 0; i < len; i++) {
+        arr_add(arr, using_string(strings[i]));
+    }
+    return arr;
+}
+
+array_list_t* arr_create_from_floats(float floats[], int len) {
+    array_list_t* arr = arr_allocate(ARR_FLOAT, arr_basic_capacity, map_sizes[ARR_FLOAT]);
+    if (arr == NULL) {
+        arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create from ints");
+        return NULL;
+    }
+    for (int i = 0; i < len; i++) {
+        arr_add(arr, using_float(floats[i]));
+    }
+    return arr;
+}
+
+array_list_t* arr_create_from_doubles(double doubles[], int len) {
+    array_list_t* arr = arr_allocate(ARR_DOUBLE, arr_basic_capacity, map_sizes[ARR_DOUBLE]);
+    if (arr == NULL) {
+        arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create from ints");
+        return NULL;
+    }
+    for (int i = 0; i < len; i++) {
+        arr_add(arr, using_double(doubles[i]));
+    }
+    return arr;
+}
+
+/*============================= PRINTIING OF ARRAY =============================*/
+void* arr_get_address(array_list_t* arr, int index) {
+    if (index < 0 || index >= arr->length) {
+        arr_handle_internal_operation_status(ARR_OUT_OF_BOUNDS, "Array get");
+        return NULL;
+    }
+    return arr->values + index * arr->size_of_one_element;
+}
+
+int is_sector_empty(void* target, size_t elem_size) {
+    const unsigned char* buffer = (const unsigned char*)target;
+    for (int i = 0; i < elem_size; i++) {
+        if (buffer[i] != 0) return 0;
+    }
+    return 1;
+}
+
+int is_slot_empty(array_list_t* arr, int id) {
+    void* sector = arr_get_address(arr, id);
+    if (sector == NULL) return 1;
+    return is_sector_empty(sector, arr->size_of_one_element);
+}
+/* ================ PRIVATE ================*/
+void itterate_string(array_list_t* arr) {
+    char** list = (char**)arr->values;
+    for (size_t i = 0; i < arr->length; i++) {
+        void* memory_target = arr_get_address(arr, i);
+        char* x = is_sector_empty(memory_target, arr->size_of_one_element) != 1 ? list[i] : "null";
+        printf("\n%s ", x);
+    }
+}
+void itterate_int(array_list_t* arr) {
+    int* list = (int*)arr->values;
+    for (size_t i = 0; i < arr->length; i++) {
+        void* memory_target = arr_get_address(arr, i);
+        if (is_sector_empty(memory_target, arr->size_of_one_element) != 1) {
+            printf("\n%u", list[i]);
+        } else {
+            printf("\n%s", "null");
+        }
+    }
+}
+void itterate_char(array_list_t* arr) {
+    char* list = (char*)arr->values;
+    for (size_t i = 0; i < arr->length; i++) {
+        void* memory_target = arr_get_address(arr, i);
+        if (is_sector_empty(memory_target, arr->size_of_one_element) != 1) {
+            printf("\n%c", list[i]);
+        } else {
+            printf("\n%s", "null");
+        }
+    }
+}
+void itterate_double(array_list_t* arr) {
+    double* list = (double*)arr->values;
+    for (size_t i = 0; i < arr->length; i++) {
+        void* memory_target = arr_get_address(arr, i);
+        if (is_sector_empty(memory_target, arr->size_of_one_element) != 1) {
+            printf("\n%f", list[i]);
+        } else {
+            printf("\n%s", "null");
+        }
+    }
+}
+void itterate_float(array_list_t* arr) {
+    float* list = (float*)arr->values;
+    for (size_t i = 0; i < arr->length; i++) {
+        void* memory_target = arr_get_address(arr, i);
+        if (is_sector_empty(memory_target, arr->size_of_one_element) != 1) {
+            printf("\n%f", list[i]);
+        } else {
+            printf("\n%s", "null");
+        }
+    }
+}
+void (*arr_print_map[types_supported])(array_list_t* arr);
+arr_status arr_init_map_prints() {
+    arr_print_map[ARR_INT] = itterate_int;
+    arr_print_map[ARR_CHAR] = itterate_char;
+    arr_print_map[ARR_STRINGS] = itterate_string;
+    arr_print_map[ARR_DOUBLE] = itterate_double;
+    arr_print_map[ARR_FLOAT] = itterate_float;
+}
+/* ================ PUBLIC ================*/
+arr_status arr_print(array_list_t* arr) {
+    arr_status st = arr_verify_array(arr, not_after_malloc);
+    if (st != ARR_OK) return st;
+    arr_print_map[arr->type](arr);
+    return ARR_OK;
+}
+
+/*============================= SETTING VALUE TO ARRAY =============================*/
+/* ================== PRIVATE ================== */
+arr_status set_int(array_list_t* arr, arr_value arr_v, size_t index) {
+    int* target_1 = (int*)arr->values;
+    ((int*)target_1)[index] = *(int*)arr_v.value;
+}
+arr_status set_char(array_list_t* arr, arr_value arr_v, size_t index) {
+    char* target_2 = (char*)arr->values;
+    ((char*)target_2)[index] = *(char*)arr_v.value;
+}
+arr_status set_string(array_list_t* arr, arr_value arr_v, size_t index) {
+    char** target_3 = (char**)arr->values;
+    ((char**)target_3)[index] = *(char**)arr_v.value;
+}
+arr_status set_double(array_list_t* arr, arr_value arr_v, size_t index) {
+    double* target_4 = (double*)arr->values;
+    ((double*)target_4)[index] = *(double*)arr_v.value;
+}
+arr_status set_float(array_list_t* arr, arr_value arr_v, size_t index) {
+    float* target_5 = (float*)arr->values;
+    ((float*)target_5)[index] = *(float*)arr_v.value;
+}
+
+arr_status (*arr_set_map[types_supported])(array_list_t* arr, arr_value, size_t index);
+arr_status arr_init_map_sets() {
+    arr_set_map[ARR_INT] = set_int;
+    arr_set_map[ARR_CHAR] = set_char;
+    arr_set_map[ARR_STRINGS] = set_string;
+    arr_set_map[ARR_DOUBLE] = set_double;
+    arr_set_map[ARR_FLOAT] = set_float;
+}
+
+arr_status arr_clear_sector(void* target, size_t elem_size) {
+    unsigned char* t = (unsigned char*)target;
+    for (int i = 0; i < elem_size; i++) {
+        t[i] = 0;
+    }
+    return ARR_OK;
+}
+
 /* ================== PUBLIC ================== */
+
+arr_status arr_delete(array_list_t* arr, size_t index) {
+    arr_status st = arr_verify_array(arr, not_after_malloc);
+    if (st != ARR_OK) return st;
+    if (arr->length == 0) return ARR_OK;
+
+    size_t elem_size = arr->size_of_one_element;
+    void* target = arr_get_address(arr, index);
+    if (target == NULL) return ARR_OUT_OF_BOUNDS;
+
+    arr_clear_sector(target, elem_size);
+    int is_cleared = 0;
+    while (index == arr->length - 1 && arr->length != 0 && index != 0 && is_cleared != 1) {
+        void* target_to_shrink = arr_get_address(arr, index);
+        if (target_to_shrink == NULL) return ARR_OUT_OF_BOUNDS;
+        if (is_sector_empty(target_to_shrink, elem_size) != 1) {
+            is_cleared = 1;
+        } else {
+            arr->length--;
+            index--;
+        };
+    }
+    // arr->length--;
+    return ARR_OK;
+}
+
 arr_status arr_add(array_list_t* arr, arr_value arr_v) {
     ARR_TYPE type = arr_v.type;
     if (arr->type != type || arr->type == ARR_CUSTOM) return ARR_INCONSISTENT_TYPE_PROVIDED;
@@ -251,6 +432,15 @@ arr_status arr_add(array_list_t* arr, arr_value arr_v) {
     if (status != ARR_OK) return status;
     arr_add_map[arr->type](arr, arr_v);
     arr->length++;
+    free_using_container(arr_v);
+    return ARR_OK;
+}
+
+arr_status arr_set(array_list_t* arr, arr_value arr_v, int index) {
+    ARR_TYPE type = arr_v.type;
+    if (arr->type != type || arr->type == ARR_CUSTOM) return ARR_INCONSISTENT_TYPE_PROVIDED;
+    if (index < 0 || index > arr->length) return ARR_OUT_OF_BOUNDS;
+    arr_set_map[arr->type](arr, arr_v, index);
     free_using_container(arr_v);
     return ARR_OK;
 }
@@ -327,23 +517,17 @@ int arr_equals(array_list_t* arr1, array_list_t* arr2) {
 }
 
 /*============================= GETTING VALUE =============================*/
-void* arr_get_address(array_list_t* arr, int index) {
-    if (index < 0 || index >= arr->length) {
-        arr_handle_internal_operation_status(ARR_OUT_OF_BOUNDS, "Array get");
-        return NULL;
-    }
-    return arr->values + index * arr->size_of_one_element;
-}
 
 arr_value arr_get_int(array_list_t* arr, int index) {
     arr_value val = {0};
     arr_status st = arr_verify_array(arr, not_after_malloc);
+    char* operation_name = "Array get char";
     if (st != ARR_OK) {
-        arr_handle_internal_operation_status(st, "Array get int");
+        arr_handle_internal_operation_status(st, operation_name);
         return val;
     }
     if (arr->type != ARR_INT) {
-        arr_handle_internal_operation_status(ARR_INCONSISTENT_TYPE_PROVIDED, "Array get int");
+        arr_handle_internal_operation_status(ARR_INCONSISTENT_TYPE_PROVIDED, operation_name);
         return val;
     }
     void* addres = arr_get_address(arr, index);
@@ -355,15 +539,67 @@ arr_value arr_get_int(array_list_t* arr, int index) {
 arr_value arr_get_char(array_list_t* arr, int index) {
     arr_value val = {0};
     arr_status st = arr_verify_array(arr, not_after_malloc);
-    arr_handle_internal_operation_status(st, "Array get char");
+    char* operation_name = "Array get char";
+    arr_handle_internal_operation_status(st, operation_name);
     if (st != ARR_OK) return val;
     if (arr->type != ARR_CHAR) {
-        arr_handle_internal_operation_status(ARR_INCONSISTENT_TYPE_PROVIDED, "Array get char");
+        arr_handle_internal_operation_status(ARR_INCONSISTENT_TYPE_PROVIDED, operation_name);
         return val;
     }
     void* addres = arr_get_address(arr, index);
     if (addres == NULL) return val;
     val = using_char(*(char*)addres);
+    return val;
+}
+
+arr_value arr_get_string(array_list_t* arr, int index) {
+    arr_value val = {0};
+    arr_status st = arr_verify_array(arr, not_after_malloc);
+    char* operation_name = "Array get string";
+    arr_handle_internal_operation_status(st, operation_name);
+    if (st != ARR_OK) return val;
+    if (arr->type != ARR_STRINGS) {
+        arr_handle_internal_operation_status(ARR_INCONSISTENT_TYPE_PROVIDED, operation_name);
+        return val;
+    }
+    void* addres = arr_get_address(arr, index);
+    if (addres == NULL) return val;
+    val = using_string(*(char**)addres);
+    return val;
+}
+
+arr_value arr_get_float(array_list_t* arr, int index) {
+    arr_value val = {0};
+    char* operation_name = "Array get float";
+    arr_status st = arr_verify_array(arr, not_after_malloc);
+    if (st != ARR_OK) {
+        arr_handle_internal_operation_status(st, operation_name);
+        return val;
+    }
+    if (arr->type != ARR_FLOAT) {
+        arr_handle_internal_operation_status(ARR_INCONSISTENT_TYPE_PROVIDED, operation_name);
+        return val;
+    }
+    void* addres = arr_get_address(arr, index);
+    if (addres == NULL) return val;
+    val = using_float(*(float*)addres);
+    return val;
+}
+arr_value arr_get_double(array_list_t* arr, int index) {
+    arr_value val = {0};
+    char* operation_name = "Array get double";
+    arr_status st = arr_verify_array(arr, not_after_malloc);
+    if (st != ARR_OK) {
+        arr_handle_internal_operation_status(st, operation_name);
+        return val;
+    }
+    if (arr->type != ARR_DOUBLE) {
+        arr_handle_internal_operation_status(ARR_INCONSISTENT_TYPE_PROVIDED, operation_name);
+        return val;
+    }
+    void* addres = arr_get_address(arr, index);
+    if (addres == NULL) return val;
+    val = using_double(*(double*)addres);
     return val;
 }
 
@@ -379,8 +615,69 @@ int arr_init_map_get() {
 /*=============================== SORTING ==================================*/
 arr_status arr_sort(array_list_t* arr1, int(sorting_algorithm)(const void* a, const void* b)) {
     arr_status st = arr_verify_array(arr1, not_after_malloc);
-    if (st != ARR_OK) st;
+    if (st != ARR_OK) return st;
     qsort(arr1->values, arr1->length, arr1->size_of_one_element, sorting_algorithm);
+    return ARR_OK;
+};
+
+/*=============================== CLEARING ==================================*/
+arr_status arr_free(array_list_t* arr) {
+    if (arr == NULL) return ARR_IS_NULL;
+    if (arr->values == NULL) return ARR_VALUE_IS_NULL;
+    free(arr->values);
+    arr->values = NULL;
+    free(arr);
+    return ARR_OK;
+}
+
+/*================================ GETTERS ================================*/
+int arr_get_size_of_element(array_list_t* arr) {
+    arr_status st = arr_verify_array(arr, not_after_malloc);
+    if (st != ARR_OK) {
+        arr_handle_status(st);
+        return 0;
+    }
+
+    return arr->size_of_one_element;
+};
+
+ARR_TYPE arr_get_type(array_list_t* arr) {
+    arr_status st = arr_verify_array(arr, not_after_malloc);
+    if (st != ARR_OK) {
+        arr_handle_status(st);
+        return 0;
+    }
+
+    ARR_TYPE type = arr->type;
+    if (type == ARR_CUSTOM) printf("Custom type: %s", arr->custom_type);
+    return type;
+};
+int arr_get_mem_capacity(array_list_t* arr) {
+    arr_status st = arr_verify_array(arr, not_after_malloc);
+    if (st != ARR_OK) {
+        arr_handle_status(st);
+        return 0;
+    }
+
+    return arr->capacity;
+};
+int arr_get_elements_capacity(array_list_t* arr) {
+    arr_status st = arr_verify_array(arr, not_after_malloc);
+    if (st != ARR_OK) {
+        arr_handle_status(st);
+        return 0;
+    }
+
+    return arr->capacity / arr->size_of_one_element;
+};
+int arr_get_length(array_list_t* arr) {
+    arr_status st = arr_verify_array(arr, not_after_malloc);
+    if (st != ARR_OK) {
+        arr_handle_status(st);
+        return 0;
+    }
+
+    return arr->length;
 };
 
 void arr_init() {
@@ -388,4 +685,5 @@ void arr_init() {
     arr_init_map_adds();
     arr_init_map_sizes();
     arr_init_map_equals();
+    arr_init_map_sets();
 }
