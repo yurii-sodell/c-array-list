@@ -43,7 +43,10 @@ typedef enum {
 void arr_init();
 
 array_list_t* arr_create(ARR_TYPE DataType);
+array_list_t* arr_create_greedy(ARR_TYPE DataType, int basic_capacity);
+
 array_list_t* arr_create_custom(char* generic, size_t size);
+array_list_t* arr_create_custom_greedy(char* generic, size_t size, int basic_capacity);
 
 array_list_t* arr_create_from_ints(int ints[], int len);
 array_list_t* arr_create_from_chars(char chars[], int len);
@@ -99,4 +102,4 @@ int arr_get_mem_capacity(array_list_t* arr);
 int arr_get_elements_capacity(array_list_t* arr);
 int arr_get_length(array_list_t* arr);
 
-#endif
+#endif //ARRAY_LIST_T_H

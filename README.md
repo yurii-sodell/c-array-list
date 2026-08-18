@@ -176,6 +176,37 @@ Creates an empty custom-type array named `generic_name` with element
 size `element_size` bytes. The type must already be registered with
 `arr_custom_register_type`.
 
+## Creating arrays with a custom initial capacity
+
+### arr_create_greedy
+
+```c
+array_list_t* arr_create_greedy(ARR_TYPE DataType, int basic_capacity);
+```
+
+Same as `arr_create`, but lets the caller set the initial capacity
+explicitly instead of using the default `arr_basic_capacity` (1024).
+Useful when the expected size of the array is known in advance: a
+larger `basic_capacity` avoids early reallocations, a smaller one
+avoids allocating memory that won't be used. `ARR_CUSTOM` is not
+supported here (use `arr_create_custom_greedy` instead). Returns a
+pointer to the array or `NULL` on error.
+
+### arr_create_custom_greedy
+
+```c
+array_list_t* arr_create_custom_greedy(char* generic_name, size_t element_size, int basic_capacity);
+```
+
+Same as `arr_create_custom`, but with an explicit initial capacity
+instead of the default `arr_basic_capacity`. The type must already be
+registered with `arr_custom_register_type`, exactly as for
+`arr_create_custom`.
+
+> **Note:** `basic_capacity` sets the *initial* capacity only —
+> subsequent growth behavior is unchanged (the buffer still grows
+> automatically as elements are added and never shrinks back). 
+
 ### arr_create_from_ints / arr_create_from_chars / arr_create_from_strings / arr_create_from_floats / arr_create_from_doubles
 
 ```c

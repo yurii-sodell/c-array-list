@@ -134,14 +134,14 @@ arr_status check_memory_allocation(array_list_t* arr) {
     int expected_capcaity = (arr->length + 10) * arr->size_of_one_element;
     while (arr->capacity < expected_capcaity) {
         int new_cap = arr->capacity / 2 + arr->capacity;
-   
+
         void* tmp = realloc(arr->values, new_cap);
-        
+
         if (tmp == NULL) return ARR_MEMORY_FAULT;
         arr->values = tmp;
         arr->capacity = new_cap;
     }
-    
+
     return ARR_OK;
 }
 
@@ -202,6 +202,18 @@ array_list_t* arr_create(ARR_TYPE DataType) {
         return NULL;
     }
     array_list_t* arr = arr_allocate(DataType, arr_basic_capacity, map_sizes[DataType]);
+    if (arr == NULL) arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create");
+    return arr;
+}
+
+array_list_t* arr_create_greedy(ARR_TYPE DataType, int basic_capacity){
+    if (DataType == ARR_CUSTOM) {
+        fprintf(
+            stderr,
+            "Wrong arr type is provided. For custom types use arr_create_custom(). NULL returned");
+        return NULL;
+    }
+    array_list_t* arr = arr_allocate(DataType, basic_capacity, map_sizes[DataType]);
     if (arr == NULL) arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create");
     return arr;
 }

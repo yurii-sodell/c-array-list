@@ -90,6 +90,27 @@ array_list_t* arr_create_custom(char* generic_name, size_t element_size) {
     return arr;
 }
 
+array_list_t* arr_create_custom_greedy(char* generic_name, size_t element_size, int basic_capacity){
+ if (is_type_registered(generic_name) == 0) {
+        char* message = build_error_message("Error: Custom array create for ", generic_name, NULL);
+        arr_handle_internal_operation_status(ARR_CUSTOM_TYPE_IS_NOT_REGISTERED, message);
+        free(message);
+        return NULL;
+    }
+
+    array_list_t* arr = arr_allocate(ARR_CUSTOM, basic_capacity, element_size);
+    arr_status status = arr_verify_array(arr, after_malloc);
+
+    if (status != ARR_OK) {
+        char* message = build_error_message("Custom array create for ", generic_name, NULL);
+        arr_handle_internal_operation_status(status, message);
+        free(message);
+        return NULL;
+    }
+    arr->custom_type = strdup(generic_name);
+    return arr;
+}
+
 arr_status arr_custom_register_type(char* type) {
     if (type_register_counter + 1 == MAX_TYPES) return ARR_CUSTOM_REGISTER_REACHED_MAX_AMOUNT;
     if (is_type_registered(type) == 1) return ARR_CUSTOM_TYPE_IS_ALREADY_REGISTERED;
