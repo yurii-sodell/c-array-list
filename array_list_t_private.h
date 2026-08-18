@@ -1,6 +1,7 @@
 #include "array_list_t.h"
 #define after_malloc 1
 #define not_after_malloc 0
+#define SAFE_FREE(p) do{free(p); p = NULL; }while(0);
 
 typedef struct array_list_t {
     int length;

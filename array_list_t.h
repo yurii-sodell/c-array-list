@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 typedef struct array_list_t array_list_t;
 #ifndef ARRAY_LIST_T_H
 #define ARRAY_LIST_T_H

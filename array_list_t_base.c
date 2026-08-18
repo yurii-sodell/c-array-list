@@ -84,6 +84,7 @@ array_list_t* arr_allocate(ARR_TYPE DataType, int capacity, int element_size) {
     arr->type = DataType;
     arr->size_of_one_element = element_size;
     arr->values = calloc(capacity, element_size);
+    arr->custom_type = NULL;
     if (arr->values == NULL) return NULL;
     return arr;
 }
@@ -636,9 +637,9 @@ arr_status arr_sort(array_list_t* arr1, int(sorting_algorithm)(const void* a, co
 arr_status arr_free(array_list_t* arr) {
     if (arr == NULL) return ARR_IS_NULL;
     if (arr->values == NULL) return ARR_VALUE_IS_NULL;
-    free(arr->values);
-    arr->values = NULL;
-    free(arr);
+    SAFE_FREE(arr->custom_type);
+    SAFE_FREE(arr->values);
+    SAFE_FREE(arr);
     return ARR_OK;
 }
 
