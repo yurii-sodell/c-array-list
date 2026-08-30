@@ -5,17 +5,23 @@ typedef struct array_list_t array_list_t;
 #define ARRAY_LIST_T_H
 
 #define arr_basic_capacity 1024
-#define types_supported 5
+#define types_supported 9
 
 #define has(status) arr_handle_status(status)
 
 typedef enum {
-    ARR_INT,      // 1
-    ARR_STRINGS,  // 2
-    ARR_CHAR,     // 3
-    ARR_DOUBLE,   // 4
-    ARR_FLOAT,    // 5
-    ARR_CUSTOM    // 6
+    ARR_INT,            // 1
+    ARR_LONG,           // 2
+    ARR_LONG_LONG,      // 3
+    ARR_LONG_DOUBLE,    // 4
+    ARR_SHORT,          // 5
+    ARR_STRINGS,        // 6
+    ARR_CHAR,           // 7
+    ARR_DOUBLE,         // 8
+    ARR_FLOAT,          // 9
+    ARR_MULTI_BASIC,    // 10
+    ARR_CUSTOM,          // 11
+    ARR_NULL
 } ARR_TYPE;
 
 typedef struct arr_value {
@@ -42,7 +48,7 @@ typedef enum {
     ARR_SIZES_OF_ARRAY_ELEMENT_AND_PROVIDED_ARE_DEFER = -13
 } arr_status;
 
-void arr_init();
+void arr_lib_init();
 
 array_list_t* arr_create(ARR_TYPE DataType);
 array_list_t* arr_create_greedy(ARR_TYPE DataType, int basic_capacity);
@@ -55,6 +61,10 @@ array_list_t* arr_create_from_chars(char chars[], int len);
 array_list_t* arr_create_from_strings(char* strings[], int len);
 array_list_t* arr_create_from_floats(float floats[], int len);
 array_list_t* arr_create_from_doubles(double doubles[], int len);
+array_list_t* arr_create_from_longs(long longs[], int len);
+array_list_t* arr_create_from_long_longs(long long longlongs[], int len);
+array_list_t* arr_create_from_long_doubles(long double longdoubles[], int len);
+array_list_t* arr_create_from_shorts(short shorts[], int len);
 
 array_list_t* arr_create_from_customs(void* values[], int len, char* generic_name,
                                       size_t element_size);
@@ -66,6 +76,10 @@ arr_value arr_get_string(array_list_t* arr, int index);
 arr_value arr_get_float(array_list_t* arr, int index);
 arr_value arr_get_double(array_list_t* arr, int index);
 arr_value arr_get_custom(array_list_t* arr, int index);
+arr_value arr_get_long(array_list_t* arr, int index);
+arr_value arr_get_long_long(array_list_t* arr, int index);
+arr_value arr_get_long_double(array_list_t* arr, int index);
+arr_value arr_get_short(array_list_t* arr, int index);
 
 arr_status arr_add(array_list_t* arr, arr_value value);
 arr_status arr_set(array_list_t* arr, arr_value arr_v, int index);
@@ -78,6 +92,11 @@ arr_value using_char(char c);
 arr_value using_string(char* s);
 arr_value using_double(double d);
 arr_value using_float(float f);
+arr_value using_long(long l);
+arr_value using_long_long(long long ll);
+arr_value using_long_double(long double ld);
+arr_value using_short(short s);
+arr_value using_null();
 
 void free_using_container(arr_value av);
 void arr_handle_status(arr_status st);

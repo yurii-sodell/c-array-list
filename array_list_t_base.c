@@ -128,6 +128,44 @@ arr_value using_float(float f) {
     return arr_v;
 };
 
+arr_value using_long(long l) {
+    arr_value arr_v;
+    arr_v.type = ARR_LONG;
+    arr_v.value = malloc(sizeof(l));
+    *(long*)arr_v.value = l;
+    return arr_v;
+};
+
+arr_value using_long_long(long long ll) {
+    arr_value arr_v;
+    arr_v.type = ARR_LONG_LONG;
+    arr_v.value = malloc(sizeof(ll));
+    *(long long*)arr_v.value = ll;
+    return arr_v;
+};
+
+arr_value using_long_double(long double ld) {
+    arr_value arr_v;
+    arr_v.type = ARR_LONG_DOUBLE;
+    arr_v.value = malloc(sizeof(ld));
+    *(long double*)arr_v.value = ld;
+    return arr_v;
+};
+
+arr_value using_short(short s) {
+    arr_value arr_v;
+    arr_v.type = ARR_SHORT;
+    arr_v.value = malloc(sizeof(s));
+    *(short*)arr_v.value = s;
+    return arr_v;
+};
+
+arr_value using_null(){
+    arr_value arr_v;
+    arr_v.type = ARR_NULL;
+    return arr_v;
+};
+
 /*===============================================================================================*/
 
 /* =================== PRIVATE FOR USER. SHARED WITH CUSTOM. ===================*/
@@ -160,9 +198,20 @@ void arr_init_map_sizes() {
     map_sizes[ARR_STRINGS] = sizeof(char*);
     map_sizes[ARR_DOUBLE] = sizeof(double);
     map_sizes[ARR_FLOAT] = sizeof(float);
+    map_sizes[ARR_MULTI_BASIC] = sizeof(arr_value);
+    map_sizes[ARR_LONG] = sizeof(long);
+    map_sizes[ARR_LONG_LONG] = sizeof(long long);
+    map_sizes[ARR_LONG_DOUBLE] = sizeof(long double);
+    map_sizes[ARR_SHORT] = sizeof(short);
 }
-
 /*============================= ADDING VALUE TO ARRAY =============================*/
+arr_status arr_clear_sector(void* target, size_t elem_size) {
+    unsigned char* t = (unsigned char*)target;
+    for (int i = 0; i < elem_size; i++) {
+        t[i] = 0;
+    }
+    return ARR_OK;
+}
 /* ================== PRIVATE ================== */
 arr_status add_int(array_list_t* arr, arr_value arr_v) {
     int* target_1 = (int*)arr->values;
@@ -185,13 +234,48 @@ arr_status add_float(array_list_t* arr, arr_value arr_v) {
     ((float*)target_5)[arr->length] = *(float*)arr_v.value;
 }
 
-arr_status (*arr_add_map[types_supported])(array_list_t* arr, arr_value);
+arr_status add_long(array_list_t* arr, arr_value arr_v) {
+    long* target_5 = (long*)arr->values;
+    ((long*)target_5)[arr->length] = *(long*)arr_v.value;
+}
+
+arr_status add_long_long(array_list_t* arr, arr_value arr_v) {
+    long long* target_5 = (long long*)arr->values;
+    ((long long*)target_5)[arr->length] = *(long long*)arr_v.value;
+}
+
+arr_status add_long_double(array_list_t* arr, arr_value arr_v) {
+    long double* target_5 = (long double*)arr->values;
+    ((long double*)target_5)[arr->length] = *(long double*)arr_v.value;
+}
+
+arr_status add_short(array_list_t* arr, arr_value arr_v) {
+    short* target_5 = (short*)arr->values;
+    ((short*)target_5)[arr->length] = *(short*)arr_v.value;
+}
+
+arr_status add_multi(array_list_t* arr, arr_value arr_v) {
+    arr_value* target_5 = (arr_value*)arr->values;
+    *(target_5 + arr->size_of_one_element * arr->length) = arr_v;
+}
+
+arr_status arr_add_null(array_list_t* arr) {
+    arr_clear_sector(arr->values + arr->length * arr->size_of_one_element, arr->size_of_one_element);
+}
+
+arr_status (*arr_add_map[types_supported])(array_list_t* arr, arr_value arr_v);
+
 arr_status arr_init_map_adds() {
     arr_add_map[ARR_INT] = add_int;
     arr_add_map[ARR_CHAR] = add_char;
     arr_add_map[ARR_STRINGS] = add_string;
     arr_add_map[ARR_DOUBLE] = add_double;
     arr_add_map[ARR_FLOAT] = add_float;
+    arr_add_map[ARR_MULTI_BASIC] = add_multi;
+    arr_add_map[ARR_LONG] = add_long;
+    arr_add_map[ARR_LONG_LONG] = add_long_long;
+    arr_add_map[ARR_LONG_DOUBLE] = add_long_double;
+    arr_add_map[ARR_SHORT] = add_short;
 }
 
 /* =========== PUBLIC ===========*/
@@ -280,6 +364,54 @@ array_list_t* arr_create_from_doubles(double doubles[], int len) {
     return arr;
 }
 
+array_list_t* arr_create_from_longs(long longs[], int len) {
+    array_list_t* arr = arr_allocate(ARR_LONG, arr_basic_capacity, map_sizes[ARR_LONG]);
+    if (arr == NULL) {
+        arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create from longs");
+        return NULL;
+    }
+    for (int i = 0; i < len; i++) {
+        arr_add(arr, using_long(longs[i]));
+    }
+    return arr;
+}
+
+array_list_t* arr_create_from_long_longs(long long longlongs[], int len) {
+    array_list_t* arr = arr_allocate(ARR_LONG_LONG, arr_basic_capacity, map_sizes[ARR_LONG_LONG]);
+    if (arr == NULL) {
+        arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create from long longs");
+        return NULL;
+    }
+    for (int i = 0; i < len; i++) {
+        arr_add(arr, using_long_long(longlongs[i]));
+    }
+    return arr;
+}
+
+array_list_t* arr_create_from_long_doubles(long double longdoubles[], int len) {
+    array_list_t* arr = arr_allocate(ARR_LONG_DOUBLE, arr_basic_capacity, map_sizes[ARR_LONG_DOUBLE]);
+    if (arr == NULL) {
+        arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create from long doubles");
+        return NULL;
+    }
+    for (int i = 0; i < len; i++) {
+        arr_add(arr, using_long_double(longdoubles[i]));
+    }
+    return arr;
+}
+
+array_list_t* arr_create_from_shorts(short shorts[], int len) {
+    array_list_t* arr = arr_allocate(ARR_SHORT, arr_basic_capacity, map_sizes[ARR_SHORT]);
+    if (arr == NULL) {
+        arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create from shorts");
+        return NULL;
+    }
+    for (int i = 0; i < len; i++) {
+        arr_add(arr, using_short(shorts[i]));
+    }
+    return arr;
+}
+
 /*============================= PRINTIING OF ARRAY =============================*/
 void* arr_get_address(array_list_t* arr, int index) {
     if (index < 0 || index >= arr->length) {
@@ -355,6 +487,109 @@ void itterate_float(array_list_t* arr) {
         }
     }
 }
+
+void itterate_long(array_list_t* arr) {
+    long* list = (long*)arr->values;
+    for (size_t i = 0; i < arr->length; i++) {
+        void* memory_target = arr_get_address(arr, i);
+        if (is_sector_empty(memory_target, arr->size_of_one_element) != 1) {
+            printf("\n%ld", list[i]);
+        } else {
+            printf("\n%s", "null");
+        }
+    }
+}
+
+void itterate_long_long(array_list_t* arr) {
+    long long* list = (long long*)arr->values;
+    for (size_t i = 0; i < arr->length; i++) {
+        void* memory_target = arr_get_address(arr, i);
+        if (is_sector_empty(memory_target, arr->size_of_one_element) != 1) {
+            printf("\n%lld", list[i]);
+        } else {
+            printf("\n%s", "null");
+        }
+    }
+}
+
+void itterate_long_double(array_list_t* arr) {
+    long double* list = (long double*)arr->values;
+    for (size_t i = 0; i < arr->length; i++) {
+        void* memory_target = arr_get_address(arr, i);
+        if (is_sector_empty(memory_target, arr->size_of_one_element) != 1) {
+            printf("\n%Lf", list[i]);
+        } else {
+            printf("\n%s", "null");
+        }
+    }
+}
+
+void itterate_short(array_list_t* arr) {
+    short* list = (short*)arr->values;
+    for (size_t i = 0; i < arr->length; i++) {
+        void* memory_target = arr_get_address(arr, i);
+        if (is_sector_empty(memory_target, arr->size_of_one_element) != 1) {
+            printf("\n%hd", list[i]);
+        } else {
+            printf("\n%s", "null");
+        }
+    }
+}
+
+void print_arr_value(arr_value* arr_v){
+    
+    switch (arr_v->type)
+    {
+    case ARR_CHAR:
+        printf("%c ", *(char*) arr_v->value);
+        break;
+    case ARR_FLOAT:
+        printf("%f ", *(float*) arr_v->value);
+        break;
+    case ARR_STRINGS:
+        printf("%s ", *(char**) arr_v->value);
+        break;
+    case ARR_DOUBLE:
+        printf("%f ", *(double*) arr_v->value);
+        break;
+    case ARR_INT:
+        printf("%d ", *(int*) arr_v->value);
+        break;
+    case ARR_LONG:
+        printf("%ld ", *(long*) arr_v->value);
+        break;
+    case ARR_LONG_LONG:
+        printf("%lld ", *(long long*) arr_v->value);
+        break;
+    case ARR_LONG_DOUBLE:
+        printf("%.10f ", (double) (*(double long*) arr_v->value));
+        break;
+    case ARR_SHORT:
+        printf("%hd ", *(short*) arr_v->value);
+        break;
+    
+    default:
+        printf("UNKNOWN");
+        break;
+    }
+}
+
+void itterate_multi(array_list_t* arr) {
+    arr_value* list = (arr_value*)arr->values;
+    printf("\n[");
+    for (size_t i = 0; i < arr->length; i++) {
+        void* memory_target = list + arr->size_of_one_element * i;
+        
+        if (is_sector_empty(memory_target, arr->size_of_one_element) != 1) {
+            print_arr_value((arr_value*) memory_target);
+        } else {
+            printf("%s", "null");
+        }
+        if(i+1 != arr->length) printf(", ");
+        
+    }
+    printf("]");
+}
 void (*arr_print_map[types_supported])(array_list_t* arr);
 arr_status arr_init_map_prints() {
     arr_print_map[ARR_INT] = itterate_int;
@@ -362,54 +597,82 @@ arr_status arr_init_map_prints() {
     arr_print_map[ARR_STRINGS] = itterate_string;
     arr_print_map[ARR_DOUBLE] = itterate_double;
     arr_print_map[ARR_FLOAT] = itterate_float;
+    arr_print_map[ARR_MULTI_BASIC] = itterate_multi;
+    arr_print_map[ARR_LONG] = itterate_long;
+    arr_print_map[ARR_LONG_LONG] = itterate_long_long;
+    arr_print_map[ARR_LONG_DOUBLE] = itterate_long_double;
+    arr_print_map[ARR_SHORT] = itterate_short;
 }
 /* ================ PUBLIC ================*/
 arr_status arr_print(array_list_t* arr) {
     arr_status st = arr_verify_array(arr, not_after_malloc);
     if (st != ARR_OK) return st;
     arr_print_map[arr->type](arr);
+    
     return ARR_OK;
 }
 
 /*============================= SETTING VALUE TO ARRAY =============================*/
 /* ================== PRIVATE ================== */
-arr_status set_int(array_list_t* arr, arr_value arr_v, size_t index) {
+void set_int(array_list_t* arr, arr_value arr_v, size_t index) {
     int* target_1 = (int*)arr->values;
     ((int*)target_1)[index] = *(int*)arr_v.value;
 }
-arr_status set_char(array_list_t* arr, arr_value arr_v, size_t index) {
+void set_char(array_list_t* arr, arr_value arr_v, size_t index) {
     char* target_2 = (char*)arr->values;
     ((char*)target_2)[index] = *(char*)arr_v.value;
 }
-arr_status set_string(array_list_t* arr, arr_value arr_v, size_t index) {
+void set_string(array_list_t* arr, arr_value arr_v, size_t index) {
     char** target_3 = (char**)arr->values;
     ((char**)target_3)[index] = *(char**)arr_v.value;
 }
-arr_status set_double(array_list_t* arr, arr_value arr_v, size_t index) {
+void set_double(array_list_t* arr, arr_value arr_v, size_t index) {
     double* target_4 = (double*)arr->values;
     ((double*)target_4)[index] = *(double*)arr_v.value;
 }
-arr_status set_float(array_list_t* arr, arr_value arr_v, size_t index) {
+void set_float(array_list_t* arr, arr_value arr_v, size_t index) {
     float* target_5 = (float*)arr->values;
     ((float*)target_5)[index] = *(float*)arr_v.value;
 }
 
-arr_status (*arr_set_map[types_supported])(array_list_t* arr, arr_value, size_t index);
+void set_long(array_list_t* arr, arr_value arr_v, size_t index) {
+    long* target_5 = (long*)arr->values;
+    ((long*)target_5)[index] = *(long*)arr_v.value;
+}
+
+void set_long_long(array_list_t* arr, arr_value arr_v, size_t index) {
+    long long* target_5 = (long long*)arr->values;
+    ((long long*)target_5)[index] = *(long long*)arr_v.value;
+}
+
+void set_long_double(array_list_t* arr, arr_value arr_v, size_t index) {
+    long double* target_5 = (long double*)arr->values;
+    ((long double*)target_5)[index] = *(long double*)arr_v.value;
+}
+
+void set_short(array_list_t* arr, arr_value arr_v, size_t index) {
+    short* target_5 = (short*)arr->values;
+    ((short*)target_5)[index] = *(short*)arr_v.value;
+}
+
+void set_null(array_list_t* arr, size_t index){
+    arr_clear_sector(arr->values + index * arr->size_of_one_element, arr->size_of_one_element);
+}
+
+void (*arr_set_map[types_supported])(array_list_t* arr, arr_value, size_t index);
 arr_status arr_init_map_sets() {
     arr_set_map[ARR_INT] = set_int;
     arr_set_map[ARR_CHAR] = set_char;
     arr_set_map[ARR_STRINGS] = set_string;
     arr_set_map[ARR_DOUBLE] = set_double;
     arr_set_map[ARR_FLOAT] = set_float;
+    arr_set_map[ARR_LONG] = set_long;
+    arr_set_map[ARR_LONG_LONG] = set_long_long;
+    arr_set_map[ARR_LONG_DOUBLE] = set_long_double;
+    arr_set_map[ARR_SHORT] = set_short;
 }
 
-arr_status arr_clear_sector(void* target, size_t elem_size) {
-    unsigned char* t = (unsigned char*)target;
-    for (int i = 0; i < elem_size; i++) {
-        t[i] = 0;
-    }
-    return ARR_OK;
-}
+
 
 /* ================== PUBLIC ================== */
 
@@ -434,18 +697,31 @@ arr_status arr_delete(array_list_t* arr, size_t index) {
             index--;
         };
     }
-    // arr->length--;
     return ARR_OK;
 }
 
 arr_status arr_add(array_list_t* arr, arr_value arr_v) {
-    ARR_TYPE type = arr_v.type;
-    if (arr->type != type || arr->type == ARR_CUSTOM) return ARR_INCONSISTENT_TYPE_PROVIDED;
+    arr_status st = arr_verify_array(arr, not_after_malloc);
+    if (st != ARR_OK) return st;
+    ARR_TYPE type_v = arr_v.type;
+    ARR_TYPE type_arr = arr->type;
+    
+    if(type_v == ARR_NULL && type_arr == ARR_MULTI_BASIC){
+        arr_add_null(arr);
+        arr->length++;
+        return ARR_OK;
+    }
+
+    if(type_v == ARR_NULL) return ARR_INCONSISTENT_TYPE_PROVIDED;
+    
+    if ((type_arr != type_v || type_arr == ARR_CUSTOM) && type_arr != ARR_MULTI_BASIC) return ARR_INCONSISTENT_TYPE_PROVIDED;
     arr_status status = check_memory_allocation(arr);
+    
     if (status != ARR_OK) return status;
-    arr_add_map[arr->type](arr, arr_v);
+    arr_add_map[type_arr](arr, arr_v);
     arr->length++;
-    free_using_container(arr_v);
+    
+    if(arr->type != ARR_MULTI_BASIC) free_using_container(arr_v);
     return ARR_OK;
 }
 
@@ -504,8 +780,48 @@ int arr_equals_double(array_list_t* arr1, array_list_t* arr2) {
 int arr_equals_float(array_list_t* arr1, array_list_t* arr2) {
     int len = arr1->length;
     for (size_t i = 0; i < len; i++) {
-        int v1 = ((int*)arr1->values)[i];
-        int v2 = ((int*)arr2->values)[i];
+        float v1 = ((float*)arr1->values)[i];
+        float v2 = ((float*)arr2->values)[i];
+        if (v1 != v2) return 0;
+    }
+    return 1;
+}
+
+int arr_equals_long(array_list_t* arr1, array_list_t* arr2) {
+    int len = arr1->length;
+    for (size_t i = 0; i < len; i++) {
+        long v1 = ((long*)arr1->values)[i];
+        long v2 = ((long*)arr2->values)[i];
+        if (v1 != v2) return 0;
+    }
+    return 1;
+}
+
+int arr_equals_long_long(array_list_t* arr1, array_list_t* arr2) {
+    int len = arr1->length;
+    for (size_t i = 0; i < len; i++) {
+        long long v1 = ((long long*)arr1->values)[i];
+        long long v2 = ((long long*)arr2->values)[i];
+        if (v1 != v2) return 0;
+    }
+    return 1;
+}
+
+int arr_equals_long_double(array_list_t* arr1, array_list_t* arr2) {
+    int len = arr1->length;
+    for (size_t i = 0; i < len; i++) {
+        long double v1 = ((long double*)arr1->values)[i];
+        long double v2 = ((long double*)arr2->values)[i];
+        if (v1 != v2) return 0;
+    }
+    return 1;
+}
+
+int arr_equals_short(array_list_t* arr1, array_list_t* arr2) {
+    int len = arr1->length;
+    for (size_t i = 0; i < len; i++) {
+        short v1 = ((short*)arr1->values)[i];
+        short v2 = ((short*)arr2->values)[i];
         if (v1 != v2) return 0;
     }
     return 1;
@@ -518,6 +834,10 @@ int arr_init_map_equals() {
     arr_equals_map[ARR_STRINGS] = arr_equals_string;
     arr_equals_map[ARR_DOUBLE] = arr_equals_double;
     arr_equals_map[ARR_FLOAT] = arr_equals_float;
+    arr_equals_map[ARR_LONG] = arr_equals_long;
+    arr_equals_map[ARR_LONG_LONG] = arr_equals_long_long;
+    arr_equals_map[ARR_LONG_DOUBLE] = arr_equals_long_double;
+    arr_equals_map[ARR_SHORT] = arr_equals_short;
 }
 /* ================ PUBLIC ================*/
 
@@ -616,6 +936,78 @@ arr_value arr_get_double(array_list_t* arr, int index) {
     return val;
 }
 
+arr_value arr_get_long(array_list_t* arr, int index) {
+    arr_value val = {0};
+    char* operation_name = "Array get long";
+    arr_status st = arr_verify_array(arr, not_after_malloc);
+    if (st != ARR_OK) {
+        arr_handle_internal_operation_status(st, operation_name);
+        return val;
+    }
+    if (arr->type != ARR_LONG) {
+        arr_handle_internal_operation_status(ARR_INCONSISTENT_TYPE_PROVIDED, operation_name);
+        return val;
+    }
+    void* addres = arr_get_address(arr, index);
+    if (addres == NULL) return val;
+    val = using_long(*(long*)addres);
+    return val;
+}
+
+arr_value arr_get_long_long(array_list_t* arr, int index) {
+    arr_value val = {0};
+    char* operation_name = "Array get long long";
+    arr_status st = arr_verify_array(arr, not_after_malloc);
+    if (st != ARR_OK) {
+        arr_handle_internal_operation_status(st, operation_name);
+        return val;
+    }
+    if (arr->type != ARR_LONG_LONG) {
+        arr_handle_internal_operation_status(ARR_INCONSISTENT_TYPE_PROVIDED, operation_name);
+        return val;
+    }
+    void* addres = arr_get_address(arr, index);
+    if (addres == NULL) return val;
+    val = using_long_long(*(long long*)addres);
+    return val;
+}
+
+arr_value arr_get_long_double(array_list_t* arr, int index) {
+    arr_value val = {0};
+    char* operation_name = "Array get long double";
+    arr_status st = arr_verify_array(arr, not_after_malloc);
+    if (st != ARR_OK) {
+        arr_handle_internal_operation_status(st, operation_name);
+        return val;
+    }
+    if (arr->type != ARR_LONG_DOUBLE) {
+        arr_handle_internal_operation_status(ARR_INCONSISTENT_TYPE_PROVIDED, operation_name);
+        return val;
+    }
+    void* addres = arr_get_address(arr, index);
+    if (addres == NULL) return val;
+    val = using_long_double(*(long double*)addres);
+    return val;
+}
+
+arr_value arr_get_short(array_list_t* arr, int index) {
+    arr_value val = {0};
+    char* operation_name = "Array get short";
+    arr_status st = arr_verify_array(arr, not_after_malloc);
+    if (st != ARR_OK) {
+        arr_handle_internal_operation_status(st, operation_name);
+        return val;
+    }
+    if (arr->type != ARR_SHORT) {
+        arr_handle_internal_operation_status(ARR_INCONSISTENT_TYPE_PROVIDED, operation_name);
+        return val;
+    }
+    void* addres = arr_get_address(arr, index);
+    if (addres == NULL) return val;
+    val = using_short(*(short*)addres);
+    return val;
+}
+
 int (*arr_equals_map[types_supported])(array_list_t* arr1, array_list_t* arr2);
 int arr_init_map_get() {
     arr_equals_map[ARR_INT] = arr_equals_int;
@@ -623,6 +1015,10 @@ int arr_init_map_get() {
     arr_equals_map[ARR_STRINGS] = arr_equals_string;
     arr_equals_map[ARR_DOUBLE] = arr_equals_double;
     arr_equals_map[ARR_FLOAT] = arr_equals_float;
+    arr_equals_map[ARR_LONG] = arr_equals_long;
+    arr_equals_map[ARR_LONG_LONG] = arr_equals_long_long;
+    arr_equals_map[ARR_LONG_DOUBLE] = arr_equals_long_double;
+    arr_equals_map[ARR_SHORT] = arr_equals_short;
 }
 
 /*=============================== SORTING ==================================*/
@@ -693,8 +1089,9 @@ int arr_get_length(array_list_t* arr) {
     return arr->length;
 };
 
-void arr_init() {
+void arr_lib_init() {
     arr_init_map_prints();
+    arr_init_map_get();
     arr_init_map_adds();
     arr_init_map_sizes();
     arr_init_map_equals();
