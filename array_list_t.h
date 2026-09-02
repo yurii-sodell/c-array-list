@@ -10,17 +10,17 @@ typedef struct array_list_t array_list_t;
 #define has(status) arr_handle_status(status)
 
 typedef enum {
-    ARR_INT,            // 1
-    ARR_LONG,           // 2
-    ARR_LONG_LONG,      // 3
-    ARR_LONG_DOUBLE,    // 4
-    ARR_SHORT,          // 5
-    ARR_STRINGS,        // 6
-    ARR_CHAR,           // 7
-    ARR_DOUBLE,         // 8
-    ARR_FLOAT,          // 9
-    ARR_MULTI_BASIC,    // 10
-    ARR_CUSTOM,          // 11
+    ARR_INT,          // 1
+    ARR_LONG,         // 2
+    ARR_LONG_LONG,    // 3
+    ARR_LONG_DOUBLE,  // 4
+    ARR_SHORT,        // 5
+    ARR_STRINGS,      // 6
+    ARR_CHAR,         // 7
+    ARR_DOUBLE,       // 8
+    ARR_FLOAT,        // 9
+    ARR_VARIANT,      // 10
+    ARR_CUSTOM,       // 11
     ARR_NULL
 } ARR_TYPE;
 
@@ -81,6 +81,8 @@ arr_value arr_get_long_long(array_list_t* arr, int index);
 arr_value arr_get_long_double(array_list_t* arr, int index);
 arr_value arr_get_short(array_list_t* arr, int index);
 
+arr_value* arr_get_variant(array_list_t* arr, int index);
+
 arr_status arr_add(array_list_t* arr, arr_value value);
 arr_status arr_set(array_list_t* arr, arr_value arr_v, int index);
 
@@ -97,6 +99,19 @@ arr_value using_long_long(long long ll);
 arr_value using_long_double(long double ld);
 arr_value using_short(short s);
 arr_value using_null();
+
+void itterate_variant(array_list_t* arr);
+
+int arv_unpack_int(arr_value* v);
+double arv_unpack_double(arr_value* v);
+long arv_unpack_long(arr_value* v);
+long long arv_unpack_long_long(arr_value* v);
+long double arv_unpack_long_double(arr_value* v);
+float arv_unpack_float(arr_value* v);
+char arv_unpack_char(arr_value* v);
+char* arv_unpack_string(arr_value* v);
+void* arv_unpack_null(arr_value* v);
+short arv_unpack_short(arr_value* v);
 
 void free_using_container(arr_value av);
 void arr_handle_status(arr_status st);
@@ -123,4 +138,7 @@ int arr_get_mem_capacity(array_list_t* arr);
 int arr_get_elements_capacity(array_list_t* arr);
 int arr_get_length(array_list_t* arr);
 
-#endif //ARRAY_LIST_T_H
+arr_status arr_enable_auto_trim_on_trailing_null(array_list_t* arr);
+arr_status arr_disable_auto_trim_on_trailing_null(array_list_t* arr);
+
+#endif  // ARRAY_LIST_T_H

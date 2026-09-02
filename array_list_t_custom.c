@@ -3,9 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "array_list_t.h"
 #include "../string_builder_t/string_builder_t.h"
-
+#include "array_list_t.h"
 #include "array_list_t_private.h"
 
 #define MAX_TYPES 64
@@ -67,8 +66,6 @@ int get_type_id(char* type) {
     return -1;
 }
 
-
-
 array_list_t* arr_create_custom(char* generic_name, size_t element_size) {
     if (is_type_registered(generic_name) == 0) {
         char* message = build_error_message("Error: Custom array create for ", generic_name, NULL);
@@ -90,8 +87,9 @@ array_list_t* arr_create_custom(char* generic_name, size_t element_size) {
     return arr;
 }
 
-array_list_t* arr_create_custom_greedy(char* generic_name, size_t element_size, int basic_capacity){
- if (is_type_registered(generic_name) == 0) {
+array_list_t* arr_create_custom_greedy(char* generic_name, size_t element_size,
+                                       int basic_capacity) {
+    if (is_type_registered(generic_name) == 0) {
         char* message = build_error_message("Error: Custom array create for ", generic_name, NULL);
         arr_handle_internal_operation_status(ARR_CUSTOM_TYPE_IS_NOT_REGISTERED, message);
         free(message);
@@ -141,19 +139,17 @@ arr_value using_custom(void* value, char* name, size_t size) {
 
 arr_value arr_get_custom(array_list_t* arr, int index) {
     arr_value val = {0};
-    void* addres = arr_get_address(arr, index);
+    void* addres = arr_get_address_in_values(arr, index);
     if (addres == NULL) return val;
-    val = using_custom(addres, arr->custom_type,arr->size_of_one_element);
+    val = using_custom(addres, arr->custom_type, arr->size_of_one_element);
     return val;
 }
 
-
 arr_status arr_custom_add(array_list_t* arr, arr_value arr_v) {
- 
     arr_status st1 = arr_verify_custom_array_and_type(arr, arr_v, not_after_malloc);
-    
-        if (st1 != ARR_OK) return st1;
-   
+
+    if (st1 != ARR_OK) return st1;
+
     if (is_type_registered(arr_v.custom_type) == 0) return ARR_CUSTOM_TYPE_IS_NOT_REGISTERED;
 
     if (arr->size_of_one_element != arr_v.size)
@@ -162,24 +158,22 @@ arr_status arr_custom_add(array_list_t* arr, arr_value arr_v) {
 
     if (status != ARR_OK) return status;
 
-   
     memcpy(arr->values + arr->size_of_one_element * arr->length, arr_v.value,
            arr->size_of_one_element);
-        
+
     free_using_container(arr_v);
     arr->length++;
     return ARR_OK;
 }
 
-arr_status arr_custom_set(array_list_t* arr, arr_value arr_v, int index){
-     arr_status st1 = arr_verify_custom_array_and_type(arr, arr_v, not_after_malloc);
+arr_status arr_custom_set(array_list_t* arr, arr_value arr_v, int index) {
+    arr_status st1 = arr_verify_custom_array_and_type(arr, arr_v, not_after_malloc);
     if (st1 != ARR_OK) return st1;
     if (is_type_registered(arr_v.custom_type) == 0) return ARR_CUSTOM_TYPE_IS_NOT_REGISTERED;
     if (arr->size_of_one_element != arr_v.size)
         return ARR_SIZES_OF_ARRAY_ELEMENT_AND_PROVIDED_ARE_DEFER;
 
-    memcpy(arr->values + arr->size_of_one_element * index, arr_v.value,
-           arr->size_of_one_element);
+    memcpy(arr->values + arr->size_of_one_element * index, arr_v.value, arr->size_of_one_element);
     free_using_container(arr_v);
     return ARR_OK;
 }
@@ -191,7 +185,7 @@ arr_status arr_custom_provide_print(char* type, void(print)(const void* b)) {
     return ARR_OK;
 };
 arr_status arr_custom_provide_equals(char* type,
-                                      int(comp)(const void* arr_v1, const void* arr_v2)) {
+                                     int(comp)(const void* arr_v1, const void* arr_v2)) {
     int id = get_type_id(type);
     if (id == -1) return ARR_CUSTOM_TYPE_IS_NOT_REGISTERED;
     provided_equals[id] = comp;
@@ -223,11 +217,11 @@ arr_status arr_custom_print(array_list_t* arr) {
     void (*func)(const void*) = provided_prints[get_type_id(arr->custom_type)];
 
     for (int i = 0; i < arr->length; i++) {
-        if(is_slot_empty(arr, i) == 1){
-             printf("\n%s", "null");
-        }else{
-        void* value = arr->values + i * arr->size_of_one_element;
-        func(value);
+        if (is_slot_empty(arr, i) == 1) {
+            printf("\n%s", "null");
+        } else {
+            void* value = arr->values + i * arr->size_of_one_element;
+            func(value);
         }
     }
 
@@ -274,8 +268,8 @@ int arr_custom_equals(array_list_t* arr1, array_list_t* arr2) {
     return 1;
 }
 
-
-array_list_t* arr_create_from_customs(void* values[], int len, char* generic_name, size_t element_size){
+array_list_t* arr_create_from_customs(void* values[], int len, char* generic_name,
+                                      size_t element_size) {
     if (is_type_registered(generic_name) == 0) {
         char* message = build_error_message("Error: Custom array create for ", generic_name, NULL);
         arr_handle_internal_operation_status(ARR_CUSTOM_TYPE_IS_NOT_REGISTERED, message);
@@ -294,9 +288,8 @@ array_list_t* arr_create_from_customs(void* values[], int len, char* generic_nam
     }
     arr->custom_type = strdup(generic_name);
 
-    for(int i = 0; i<len; i++){
+    for (int i = 0; i < len; i++) {
         arr_custom_add(arr, using_custom(values[i], generic_name, element_size));
     }
     return arr;
 }
-
