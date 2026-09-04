@@ -10,22 +10,35 @@ typedef struct array_list_t array_list_t;
 #define has(status) arr_handle_status(status)
 
 typedef enum {
-    ARR_INT,          // 1
-    ARR_LONG,         // 2
-    ARR_LONG_LONG,    // 3
-    ARR_LONG_DOUBLE,  // 4
-    ARR_SHORT,        // 5
-    ARR_STRINGS,      // 6
-    ARR_CHAR,         // 7
-    ARR_DOUBLE,       // 8
-    ARR_FLOAT,        // 9
-    ARR_VARIANT,      // 10
-    ARR_CUSTOM,       // 11
-    ARR_NULL
+    ARR_INT,          // 0
+    ARR_LONG,         // 1
+    ARR_LONG_LONG,    // 2
+    ARR_LONG_DOUBLE,  // 3
+    ARR_SHORT,        // 4
+    ARR_STRING,       // 5
+    ARR_CHAR,         // 6
+    ARR_DOUBLE,       // 7
+    ARR_FLOAT,        // 8
+    ARR_VARIANT,      // 9
+    ARR_CUSTOM,       // 10
+    ARR_NULL          // 11
 } ARR_TYPE;
 
 typedef struct arr_value {
-    void* value;
+    void* custom_value;
+
+    union basic_value {
+        int integer;
+        char character;
+        char* string;
+        double double_v;
+        float float_v;
+        long long_v;
+        long long long_long_v;
+        long double long_double_v;
+        short short_v;
+    } basic_value;
+
     ARR_TYPE type;
     char* custom_type;
     size_t size;
@@ -81,7 +94,8 @@ arr_value arr_get_long_long(array_list_t* arr, int index);
 arr_value arr_get_long_double(array_list_t* arr, int index);
 arr_value arr_get_short(array_list_t* arr, int index);
 
-arr_value* arr_get_variant(array_list_t* arr, int index);
+arr_value arr_get_variant(array_list_t* arr, int index);
+arr_value* arr_get_variant_reference(array_list_t* arr, int index);
 
 arr_status arr_add(array_list_t* arr, arr_value value);
 arr_status arr_set(array_list_t* arr, arr_value arr_v, int index);
@@ -138,6 +152,7 @@ int arr_get_mem_capacity(array_list_t* arr);
 int arr_get_elements_capacity(array_list_t* arr);
 int arr_get_length(array_list_t* arr);
 
+arr_status arr_reverse(array_list_t* arr);
 arr_status arr_enable_auto_trim_on_trailing_null(array_list_t* arr);
 arr_status arr_disable_auto_trim_on_trailing_null(array_list_t* arr);
 

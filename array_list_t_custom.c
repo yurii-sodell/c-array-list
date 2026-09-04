@@ -34,7 +34,7 @@ char* build_error_message(char* source, char* type1, char* type2) {
 arr_status arr_verify_custom_array_and_type(array_list_t* arr, arr_value arr_v, int aftermalloc) {
     arr_status st = arr_verify_array(arr, aftermalloc);
     if (st != ARR_OK) return st;
-    if (arr_v.value == NULL) return ARR_VALUE_IS_NULL;
+    if (arr_v.custom_value == NULL) return ARR_VALUE_IS_NULL;
     if (arr->type != ARR_CUSTOM) return ARR_INCONSISTENT_TYPE_PROVIDED;
     if (arr->type == ARR_CUSTOM && (arr->custom_type == NULL || arr->custom_type[0] == '\0'))
         return ARR_CUSTOM_BUT_TYPE_NOT_SPECIFIED;
@@ -132,8 +132,8 @@ arr_value using_custom(void* value, char* name, size_t size) {
     arr_v.type = ARR_CUSTOM;
     arr_v.custom_type = strdup(name);
     arr_v.size = size;
-    arr_v.value = malloc(size);
-    memcpy(arr_v.value, value, size);
+    arr_v.custom_value = malloc(size);
+    memcpy(arr_v.custom_value, value, size);
     return arr_v;
 }
 
@@ -158,7 +158,7 @@ arr_status arr_custom_add(array_list_t* arr, arr_value arr_v) {
 
     if (status != ARR_OK) return status;
 
-    memcpy(arr->values + arr->size_of_one_element * arr->length, arr_v.value,
+    memcpy(arr->values + arr->size_of_one_element * arr->length, arr_v.custom_value,
            arr->size_of_one_element);
 
     free_using_container(arr_v);
@@ -173,7 +173,8 @@ arr_status arr_custom_set(array_list_t* arr, arr_value arr_v, int index) {
     if (arr->size_of_one_element != arr_v.size)
         return ARR_SIZES_OF_ARRAY_ELEMENT_AND_PROVIDED_ARE_DEFER;
 
-    memcpy(arr->values + arr->size_of_one_element * index, arr_v.value, arr->size_of_one_element);
+    memcpy(arr->values + arr->size_of_one_element * index, arr_v.custom_value,
+           arr->size_of_one_element);
     free_using_container(arr_v);
     return ARR_OK;
 }

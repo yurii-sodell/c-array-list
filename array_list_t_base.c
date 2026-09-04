@@ -97,76 +97,70 @@ array_list_t* arr_allocate(ARR_TYPE DataType, int capacity, int element_size) {
 arr_value using_int(int i) {
     arr_value arr_v;
     arr_v.type = ARR_INT;
-    arr_v.value = malloc(sizeof(i));
-    *(int*)arr_v.value = i;
+    arr_v.basic_value.integer = i;
     return arr_v;
-};
+}
+
 arr_value using_char(char c) {
     arr_value arr_v;
     arr_v.type = ARR_CHAR;
-    arr_v.value = malloc(sizeof(c));
-    *(char*)arr_v.value = c;
+    arr_v.basic_value.character = c;
     return arr_v;
-};
+}
+
 arr_value using_string(char* s) {
     arr_value arr_v;
-    arr_v.type = ARR_STRINGS;
-    arr_v.value = malloc(sizeof(s));
-    *(char**)arr_v.value = s;
-
+    arr_v.type = ARR_STRING;
+    arr_v.basic_value.string = s;
     return arr_v;
-};
+}
+
 arr_value using_double(double d) {
     arr_value arr_v;
     arr_v.type = ARR_DOUBLE;
-    arr_v.value = malloc(sizeof(d));
-    *(double*)arr_v.value = d;
+    arr_v.basic_value.double_v = d;
     return arr_v;
-};
+}
+
 arr_value using_float(float f) {
     arr_value arr_v;
     arr_v.type = ARR_FLOAT;
-    arr_v.value = malloc(sizeof(f));
-    *(float*)arr_v.value = f;
+    arr_v.basic_value.float_v = f;
     return arr_v;
-};
+}
 
 arr_value using_long(long l) {
     arr_value arr_v;
     arr_v.type = ARR_LONG;
-    arr_v.value = malloc(sizeof(l));
-    *(long*)arr_v.value = l;
+    arr_v.basic_value.long_v = l;
     return arr_v;
-};
+}
 
 arr_value using_long_long(long long ll) {
     arr_value arr_v;
     arr_v.type = ARR_LONG_LONG;
-    arr_v.value = malloc(sizeof(ll));
-    *(long long*)arr_v.value = ll;
+    arr_v.basic_value.long_long_v = ll;
     return arr_v;
-};
+}
 
 arr_value using_long_double(long double ld) {
     arr_value arr_v;
     arr_v.type = ARR_LONG_DOUBLE;
-    arr_v.value = malloc(sizeof(ld));
-    *(long double*)arr_v.value = ld;
+    arr_v.basic_value.long_double_v = ld;
     return arr_v;
-};
+}
 
 arr_value using_short(short s) {
     arr_value arr_v;
     arr_v.type = ARR_SHORT;
-    arr_v.value = malloc(sizeof(s));
-    *(short*)arr_v.value = s;
+    arr_v.basic_value.short_v = s;
     return arr_v;
-};
+}
 
 arr_value using_null() {
     arr_value arr_v;
     arr_v.type = ARR_NULL;
-    arr_v.value = NULL;
+    arr_v.custom_value = NULL;
     return arr_v;
 };
 
@@ -191,7 +185,7 @@ arr_status check_memory_allocation(array_list_t* arr) {
 /*============================================================================*/
 
 void free_using_container(arr_value av) {
-    free(av.value);
+    if (av.custom_value != NULL) free(av.custom_value);
     if (av.type == ARR_CUSTOM) free(av.custom_type);
 }
 
@@ -199,7 +193,7 @@ int map_sizes[types_supported];
 void arr_init_map_sizes() {
     map_sizes[ARR_INT] = sizeof(int);
     map_sizes[ARR_CHAR] = sizeof(char);
-    map_sizes[ARR_STRINGS] = sizeof(char*);
+    map_sizes[ARR_STRING] = sizeof(char*);
     map_sizes[ARR_DOUBLE] = sizeof(double);
     map_sizes[ARR_FLOAT] = sizeof(float);
     map_sizes[ARR_VARIANT] = sizeof(arr_value);
@@ -268,7 +262,7 @@ array_list_t* arr_create_from_chars(char chars[], int len) {
 }
 
 array_list_t* arr_create_from_strings(char* strings[], int len) {
-    array_list_t* arr = arr_allocate(ARR_STRINGS, arr_basic_capacity, map_sizes[ARR_STRINGS]);
+    array_list_t* arr = arr_allocate(ARR_STRING, arr_basic_capacity, map_sizes[ARR_STRING]);
     if (arr == NULL) {
         arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create from ints");
         return NULL;
@@ -489,31 +483,31 @@ void itterate_short(array_list_t* arr) {
 void print_arr_value(arr_value* arr_v) {
     switch (arr_v->type) {
         case ARR_CHAR:
-            printf("%c", *(char*)arr_v->value);
+            printf("%c", arr_v->basic_value.character);
             break;
-        case ARR_STRINGS:
-            printf("%s", *(char**)arr_v->value);
+        case ARR_STRING:
+            printf("%s", arr_v->basic_value.string);
             break;
         case ARR_INT:
-            printf("%d", *(int*)arr_v->value);
+            printf("%d", arr_v->basic_value.integer);
             break;
         case ARR_FLOAT:
-            printf("%.20f", *(float*)arr_v->value);
+            printf("%.20f", arr_v->basic_value.float_v);
             break;
         case ARR_DOUBLE:
-            printf("%.20f", *(double*)arr_v->value);
+            printf("%.20f", arr_v->basic_value.double_v);
             break;
         case ARR_LONG_DOUBLE:
-            printf("%.10Lf", *(long double*)arr_v->value);
+            printf("%.10f", (double) arr_v->basic_value.long_double_v);
             break;
         case ARR_LONG:
-            printf("%ld", *(long*)arr_v->value);
+            printf("%ld", arr_v->basic_value.long_v);
             break;
         case ARR_LONG_LONG:
-            printf("%lld", *(long long*)arr_v->value);
+            printf("%lld", arr_v->basic_value.long_long_v);
             break;
         case ARR_SHORT:
-            printf("%hd", *(short*)arr_v->value);
+            printf("%hd", arr_v->basic_value.short_v);
             break;
 
         default:
@@ -521,7 +515,7 @@ void print_arr_value(arr_value* arr_v) {
             break;
     }
 }
-arr_value* arr_get_variant(array_list_t* arr, int index);
+arr_value arr_get_variant(array_list_t* arr, int index);
 
 void itterate_variant(array_list_t* arr) {
     arr_value* values = (arr_value*)arr->values;
@@ -541,7 +535,7 @@ void (*arr_print_map[types_supported])(array_list_t* arr);
 arr_status arr_init_map_prints() {
     arr_print_map[ARR_INT] = itterate_int;
     arr_print_map[ARR_CHAR] = itterate_char;
-    arr_print_map[ARR_STRINGS] = itterate_string;
+    arr_print_map[ARR_STRING] = itterate_string;
     arr_print_map[ARR_DOUBLE] = itterate_double;
     arr_print_map[ARR_FLOAT] = itterate_float;
     arr_print_map[ARR_LONG] = itterate_long;
@@ -563,44 +557,52 @@ arr_status arr_print(array_list_t* arr) {
 /*============================= SETTING VALUE TO ARRAY =============================*/
 /* ================== PRIVATE ================== */
 void set_int(array_list_t* arr, arr_value arr_v, size_t index) {
-    int* target_1 = (int*)arr->values;
-    ((int*)target_1)[index] = *(int*)arr_v.value;
+    int* target_int = (int*)arr->values;
+    target_int[index] = arr_v.basic_value.integer;
 }
+
 void set_char(array_list_t* arr, arr_value arr_v, size_t index) {
-    char* target_2 = (char*)arr->values;
-    ((char*)target_2)[index] = *(char*)arr_v.value;
+    char* target_char = (char*)arr->values;
+    target_char[index] = arr_v.basic_value.character;
 }
+
 void set_string(array_list_t* arr, arr_value arr_v, size_t index) {
-    char** target_3 = (char**)arr->values;
-    ((char**)target_3)[index] = *(char**)arr_v.value;
+    char** target_string = (char**)arr->values;
+    target_string[index] = arr_v.basic_value.string;
 }
+
 void set_double(array_list_t* arr, arr_value arr_v, size_t index) {
-    double* target_4 = (double*)arr->values;
-    ((double*)target_4)[index] = *(double*)arr_v.value;
+    double* target_double = (double*)arr->values;
+    target_double[index] = arr_v.basic_value.double_v;
 }
+
 void set_float(array_list_t* arr, arr_value arr_v, size_t index) {
-    float* target_5 = (float*)arr->values;
-    ((float*)target_5)[index] = *(float*)arr_v.value;
+    float* target_float = (float*)arr->values;
+    target_float[index] = arr_v.basic_value.float_v;
 }
 
 void set_long(array_list_t* arr, arr_value arr_v, size_t index) {
-    long* target_5 = (long*)arr->values;
-    ((long*)target_5)[index] = *(long*)arr_v.value;
+    long* target_long = (long*)arr->values;
+    target_long[index] = arr_v.basic_value.long_v;
 }
 
 void set_long_long(array_list_t* arr, arr_value arr_v, size_t index) {
-    long long* target_5 = (long long*)arr->values;
-    ((long long*)target_5)[index] = *(long long*)arr_v.value;
+    long long* target_long_long = (long long*)arr->values;
+    target_long_long[index] = arr_v.basic_value.long_long_v;
 }
 
 void set_long_double(array_list_t* arr, arr_value arr_v, size_t index) {
-    long double* target_5 = (long double*)arr->values;
-    ((long double*)target_5)[index] = *(long double*)arr_v.value;
+    long double* target_long_double = (long double*)arr->values;
+    target_long_double[index] = arr_v.basic_value.long_double_v;
 }
 
 void set_short(array_list_t* arr, arr_value arr_v, size_t index) {
-    short* target_5 = (short*)arr->values;
-    ((short*)target_5)[index] = *(short*)arr_v.value;
+    short* target_short = (short*)arr->values;
+    target_short[index] = arr_v.basic_value.short_v;
+}
+
+void set_variant(array_list_t* arr, arr_value arr_v, size_t index) {
+    memcpy(arr->values + arr->size_of_one_element * index, &arr_v, arr->size_of_one_element);
 }
 
 void set_null(array_list_t* arr, size_t index) {
@@ -612,13 +614,14 @@ void (*arr_set_map[types_supported])(array_list_t* arr, arr_value, size_t index)
 arr_status arr_init_map_sets() {
     arr_set_map[ARR_INT] = set_int;
     arr_set_map[ARR_CHAR] = set_char;
-    arr_set_map[ARR_STRINGS] = set_string;
+    arr_set_map[ARR_STRING] = set_string;
     arr_set_map[ARR_DOUBLE] = set_double;
     arr_set_map[ARR_FLOAT] = set_float;
     arr_set_map[ARR_LONG] = set_long;
     arr_set_map[ARR_LONG_LONG] = set_long_long;
     arr_set_map[ARR_LONG_DOUBLE] = set_long_double;
     arr_set_map[ARR_SHORT] = set_short;
+    arr_set_map[ARR_VARIANT] = set_variant;
 }
 
 /* ================== PUBLIC ================== */
@@ -653,45 +656,49 @@ arr_status arr_shrink_if_possible(array_list_t* arr) {
     }
 }
 
-arr_status add_int(array_list_t* arr, arr_value arr_v) {
+void add_int(array_list_t* arr, arr_value arr_v) {
     int* target_int = (int*)arr->values;
-    ((int*)target_int)[arr->length] = *(int*)arr_v.value;
+    target_int[arr->length] = arr_v.basic_value.integer;
 }
-arr_status add_char(array_list_t* arr, arr_value arr_v) {
+
+void add_char(array_list_t* arr, arr_value arr_v) {
     char* target_char = (char*)arr->values;
-    ((char*)target_char)[arr->length] = *(char*)arr_v.value;
+    target_char[arr->length] = arr_v.basic_value.character;
 }
-arr_status add_string(array_list_t* arr, arr_value arr_v) {
+
+void add_string(array_list_t* arr, arr_value arr_v) {
     char** target_string = (char**)arr->values;
-    ((char**)target_string)[arr->length] = *(char**)arr_v.value;
+    target_string[arr->length] = arr_v.basic_value.string;
 }
-arr_status add_double(array_list_t* arr, arr_value arr_v) {
+
+void add_double(array_list_t* arr, arr_value arr_v) {
     double* target_double = (double*)arr->values;
-    ((double*)target_double)[arr->length] = *(double*)arr_v.value;
+    target_double[arr->length] = arr_v.basic_value.double_v;
 }
-arr_status add_float(array_list_t* arr, arr_value arr_v) {
+
+void add_float(array_list_t* arr, arr_value arr_v) {
     float* target_float = (float*)arr->values;
-    ((float*)target_float)[arr->length] = *(float*)arr_v.value;
+    target_float[arr->length] = arr_v.basic_value.float_v;
 }
 
-arr_status add_long(array_list_t* arr, arr_value arr_v) {
+void add_long(array_list_t* arr, arr_value arr_v) {
     long* target_long = (long*)arr->values;
-    ((long*)target_long)[arr->length] = *(long*)arr_v.value;
+    target_long[arr->length] = arr_v.basic_value.long_v;
 }
 
-arr_status add_long_long(array_list_t* arr, arr_value arr_v) {
+void add_long_long(array_list_t* arr, arr_value arr_v) {
     long long* target_long_long = (long long*)arr->values;
-    ((long long*)target_long_long)[arr->length] = *(long long*)arr_v.value;
+    target_long_long[arr->length] = arr_v.basic_value.long_long_v;
 }
 
-arr_status add_long_double(array_list_t* arr, arr_value arr_v) {
+void add_long_double(array_list_t* arr, arr_value arr_v) {
     long double* target_long_double = (long double*)arr->values;
-    ((long double*)target_long_double)[arr->length] = *(long double*)arr_v.value;
+    target_long_double[arr->length] = arr_v.basic_value.long_double_v;
 }
 
-arr_status add_short(array_list_t* arr, arr_value arr_v) {
+void add_short(array_list_t* arr, arr_value arr_v) {
     short* target_short = (short*)arr->values;
-    ((short*)target_short)[arr->length] = *(short*)arr_v.value;
+    target_short[arr->length] = arr_v.basic_value.short_v;
 }
 
 void add_null(array_list_t* arr) {
@@ -699,16 +706,16 @@ void add_null(array_list_t* arr) {
                                  arr->size_of_one_element);
 }
 
-arr_status add_variant(array_list_t* arr, arr_value arr_v) {
+void add_variant(array_list_t* arr, arr_value arr_v) {
     memcpy(arr->values + arr->size_of_one_element * arr->length, &arr_v, arr->size_of_one_element);
 }
 
-arr_status (*arr_add_map[types_supported])(array_list_t* arr, arr_value arr_v);
+void (*arr_add_map[types_supported])(array_list_t* arr, arr_value arr_v);
 
 arr_status arr_init_map_adds() {
     arr_add_map[ARR_INT] = add_int;
     arr_add_map[ARR_CHAR] = add_char;
-    arr_add_map[ARR_STRINGS] = add_string;
+    arr_add_map[ARR_STRING] = add_string;
     arr_add_map[ARR_DOUBLE] = add_double;
     arr_add_map[ARR_FLOAT] = add_float;
     arr_add_map[ARR_LONG] = add_long;
@@ -737,16 +744,29 @@ arr_status arr_add(array_list_t* arr, arr_value arr_v) {
     if (status != ARR_OK) return status;
     arr_add_map[type_arr](arr, arr_v);
     arr->length++;
-    if (arr->type != ARR_VARIANT) free_using_container(arr_v);
+    // if (arr->type != ARR_VARIANT) free_using_container(arr_v);
     return ARR_OK;
 }
-
 arr_status arr_set(array_list_t* arr, arr_value arr_v, int index) {
-    ARR_TYPE type = arr_v.type;
-    if (arr->type != type || arr->type == ARR_CUSTOM) return ARR_INCONSISTENT_TYPE_PROVIDED;
+    arr_status st = arr_verify_array(arr, not_after_malloc);
+    if (st != ARR_OK) return st;
     if (index < 0 || index > arr->length) return ARR_OUT_OF_BOUNDS;
+
+    ARR_TYPE type_v = arr_v.type;
+    ARR_TYPE type_arr = arr->type;
+    if (type_v == ARR_NULL && type_arr == ARR_VARIANT) {
+        set_null(arr, index);
+        arr->length++;
+        return ARR_OK;
+    }
+
+    if ((type_arr != type_v || type_arr == ARR_CUSTOM) && type_arr != ARR_VARIANT)
+        return ARR_INCONSISTENT_TYPE_PROVIDED;
+    arr_status status = check_memory_allocation(arr);
+    if (status != ARR_OK) return status;
     arr_set_map[arr->type](arr, arr_v, index);
-    free_using_container(arr_v);
+    arr->length++;
+    // if (arr->type != ARR_VARIANT) free_using_container(arr_v);
     return ARR_OK;
 }
 
@@ -843,18 +863,22 @@ int arr_equals_short(array_list_t* arr1, array_list_t* arr2) {
     return 1;
 }
 
+int arr_equals_variant(array_list_t* arr1, array_list_t* arr2) {}
+
 int (*arr_equals_map[types_supported])(array_list_t* arr1, array_list_t* arr2);
 int arr_init_map_equals() {
     arr_equals_map[ARR_INT] = arr_equals_int;
     arr_equals_map[ARR_CHAR] = arr_equals_char;
-    arr_equals_map[ARR_STRINGS] = arr_equals_string;
+    arr_equals_map[ARR_STRING] = arr_equals_string;
     arr_equals_map[ARR_DOUBLE] = arr_equals_double;
     arr_equals_map[ARR_FLOAT] = arr_equals_float;
     arr_equals_map[ARR_LONG] = arr_equals_long;
     arr_equals_map[ARR_LONG_LONG] = arr_equals_long_long;
     arr_equals_map[ARR_LONG_DOUBLE] = arr_equals_long_double;
     arr_equals_map[ARR_SHORT] = arr_equals_short;
+    arr_equals_map[ARR_SHORT] = arr_equals_variant;
 }
+
 /* ================ PUBLIC ================*/
 
 int arr_equals(array_list_t* arr1, array_list_t* arr2) {
@@ -907,7 +931,7 @@ arr_value arr_get_string(array_list_t* arr, int index) {
     char* operation_name = "Array get string";
     arr_handle_internal_operation_status(st, operation_name);
     if (st != ARR_OK) return val;
-    if (arr->type != ARR_STRINGS) {
+    if (arr->type != ARR_STRING) {
         arr_handle_internal_operation_status(ARR_INCONSISTENT_TYPE_PROVIDED, operation_name);
         return val;
     }
@@ -1024,8 +1048,32 @@ arr_value arr_get_short(array_list_t* arr, int index) {
     return val;
 }
 
-arr_value* arr_get_variant(array_list_t* arr, int index) {
+arr_value arr_get_variant(array_list_t* arr, int index) {
+    arr_value to_return = {0};
+
     char* operation_name = "Array get variant";
+    arr_status st = arr_verify_array(arr, not_after_malloc);
+    if (st != ARR_OK) {
+        arr_handle_internal_operation_status(st, operation_name);
+        return to_return;
+    }
+    if (arr->type != ARR_VARIANT) {
+        arr_handle_internal_operation_status(ARR_INCONSISTENT_TYPE_PROVIDED, operation_name);
+        return to_return;
+    }
+    if (index < 0 || index >= arr->length) {
+        arr_handle_internal_operation_status(ARR_OUT_OF_BOUNDS, "Array get variant");
+        return to_return;
+    }
+    void* address = arr_get_address_in_values(arr, index);
+    if (address == NULL || is_sector_empty_or_null(address, arr->size_of_one_element) == 1)
+        return using_null();  // TO FIX NULLS!
+    arr_value vp = *(arr_value*)address;
+    return vp;
+}
+
+arr_value* arr_get_variant_reference(array_list_t* arr, int index) {
+    char* operation_name = "Array get variant reference";
     arr_status st = arr_verify_array(arr, not_after_malloc);
     if (st != ARR_OK) {
         arr_handle_internal_operation_status(st, operation_name);
@@ -1040,23 +1088,11 @@ arr_value* arr_get_variant(array_list_t* arr, int index) {
         return NULL;
     }
     void* address = arr_get_address_in_values(arr, index);
-    if (address == NULL) return NULL;
+    if (address == NULL || is_sector_empty_or_null(address, arr->size_of_one_element) == 1)
+        return NULL;  // TO FIX NULLS!
     arr_value* vp = (arr_value*)address;
-    if (vp->type == ARR_NULL) return NULL;
+    printf("\n%d", vp->type);
     return vp;
-}
-
-int (*arr_equals_map[types_supported])(array_list_t* arr1, array_list_t* arr2);
-int arr_init_map_get() {
-    arr_equals_map[ARR_INT] = arr_equals_int;
-    arr_equals_map[ARR_CHAR] = arr_equals_char;
-    arr_equals_map[ARR_STRINGS] = arr_equals_string;
-    arr_equals_map[ARR_DOUBLE] = arr_equals_double;
-    arr_equals_map[ARR_FLOAT] = arr_equals_float;
-    arr_equals_map[ARR_LONG] = arr_equals_long;
-    arr_equals_map[ARR_LONG_LONG] = arr_equals_long_long;
-    arr_equals_map[ARR_LONG_DOUBLE] = arr_equals_long_double;
-    arr_equals_map[ARR_SHORT] = arr_equals_short;
 }
 
 /*=============================== SORTING ==================================*/
@@ -1074,6 +1110,26 @@ arr_status arr_free(array_list_t* arr) {
     SAFE_FREE(arr->custom_type);
     SAFE_FREE(arr->values);
     SAFE_FREE(arr);
+    return ARR_OK;
+}
+
+/*=============================== REVERSE =================================*/
+
+arr_status arr_reverse(array_list_t* arr) {
+    int length = arr->length;
+    int half_of_length = length % 2 == 1 ? length / 2 + 1 : length / 2;
+    int size = arr->size_of_one_element;
+    void* temp = malloc(size);
+    for (int i = 0; i < half_of_length; i++) {
+        void* tail;
+        void* head;
+        tail = arr_get_address_in_values(arr, i);
+        head = arr_get_address_in_values(arr, --length);
+        memmove(temp, tail, size);
+        memmove(tail, head, size);
+        memmove(head, temp, size);
+    }
+    free(temp);
     return ARR_OK;
 }
 
@@ -1127,7 +1183,6 @@ int arr_get_length(array_list_t* arr) {
     return arr->length;
 };
 
-
 //============================= ARR BEHAVIOUR ================================== //
 arr_status arr_enable_auto_trim_on_trailing_null(array_list_t* arr) {
     arr_status st = arr_verify_array(arr, not_after_malloc);
@@ -1151,7 +1206,6 @@ arr_status arr_disable_auto_trim_on_trailing_null(array_list_t* arr) {
 
 void arr_lib_init() {
     arr_init_map_prints();
-    arr_init_map_get();
     arr_init_map_adds();
     arr_init_map_sizes();
     arr_init_map_equals();
