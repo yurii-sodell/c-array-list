@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <stdbool.h>
 
 typedef struct array_list_t array_list_t;
 #ifndef ARRAY_LIST_T_H
@@ -21,7 +22,8 @@ typedef enum {
     ARR_FLOAT,        // 8
     ARR_VARIANT,      // 9
     ARR_CUSTOM,       // 10
-    ARR_NULL          // 11
+    ARR_NULL_VALUE,   // 11
+    ARR_UNSAFE        // 12
 } ARR_TYPE;
 
 typedef struct arr_value {
@@ -58,102 +60,25 @@ typedef enum {
     ARR_PRINT_IS_NOT_REGISTERED_FOR_THAT_TYPE = -10,
     ARR_EQUALS_IS_NOT_REGISTERED_FOR_THAT_TYPE = -11,
     ARR_VALUE_IS_NULL = -12,
-    ARR_SIZES_OF_ARRAY_ELEMENT_AND_PROVIDED_ARE_DEFER = -13
+    ARR_SIZES_OF_ARRAY_ELEMENT_AND_PROVIDED_ARE_DEFER = -13,
+    ARR_UNSAFE_OPERATION_ON_SAFE_TYPE_CALLED = -14
 } arr_status;
 
 void arr_lib_init();
 
-array_list_t* arr_create(ARR_TYPE DataType);
-array_list_t* arr_create_greedy(ARR_TYPE DataType, int basic_capacity);
-
-array_list_t* arr_create_custom(char* generic, size_t size);
-array_list_t* arr_create_custom_greedy(char* generic, size_t size, int basic_capacity);
-
-array_list_t* arr_create_from_ints(int ints[], int len);
-array_list_t* arr_create_from_chars(char chars[], int len);
-array_list_t* arr_create_from_strings(char* strings[], int len);
-array_list_t* arr_create_from_floats(float floats[], int len);
-array_list_t* arr_create_from_doubles(double doubles[], int len);
-array_list_t* arr_create_from_longs(long longs[], int len);
-array_list_t* arr_create_from_long_longs(long long longlongs[], int len);
-array_list_t* arr_create_from_long_doubles(long double longdoubles[], int len);
-array_list_t* arr_create_from_shorts(short shorts[], int len);
-
-array_list_t* arr_create_from_customs(void* values[], int len, char* generic_name,
-                                      size_t element_size);
-
-int arr_equals(array_list_t* arr1, array_list_t* arr2);
-arr_value arr_get_int(array_list_t* arr, int index);
-arr_value arr_get_char(array_list_t* arr, int index);
-arr_value arr_get_string(array_list_t* arr, int index);
-arr_value arr_get_float(array_list_t* arr, int index);
-arr_value arr_get_double(array_list_t* arr, int index);
-arr_value arr_get_custom(array_list_t* arr, int index);
-arr_value arr_get_long(array_list_t* arr, int index);
-arr_value arr_get_long_long(array_list_t* arr, int index);
-arr_value arr_get_long_double(array_list_t* arr, int index);
-arr_value arr_get_short(array_list_t* arr, int index);
-
-arr_value arr_get_variant(array_list_t* arr, int index);
-arr_value* arr_get_variant_reference(array_list_t* arr, int index);
-
-arr_status arr_add(array_list_t* arr, arr_value value);
-arr_status arr_set(array_list_t* arr, arr_value arr_v, int index);
-
-arr_status arr_print(array_list_t* arr);
 arr_status arr_sort(array_list_t* arr, int(sorting_algorithm)(const void* a, const void* b));
-
-arr_value using_int(int i);
-arr_value using_char(char c);
-arr_value using_string(char* s);
-arr_value using_double(double d);
-arr_value using_float(float f);
-arr_value using_long(long l);
-arr_value using_long_long(long long ll);
-arr_value using_long_double(long double ld);
-arr_value using_short(short s);
-arr_value using_null();
-
-void itterate_variant(array_list_t* arr);
-
-int arv_unpack_int(arr_value* v);
-double arv_unpack_double(arr_value* v);
-long arv_unpack_long(arr_value* v);
-long long arv_unpack_long_long(arr_value* v);
-long double arv_unpack_long_double(arr_value* v);
-float arv_unpack_float(arr_value* v);
-char arv_unpack_char(arr_value* v);
-char* arv_unpack_string(arr_value* v);
-void* arv_unpack_null(arr_value* v);
-short arv_unpack_short(arr_value* v);
-
-void free_using_container(arr_value av);
-void arr_handle_status(arr_status st);
-
-arr_status arr_custom_add(array_list_t* arr, arr_value arr_v);
-arr_status arr_custom_set(array_list_t* arr, arr_value arr_v, int index);
-
-arr_status arr_delete(array_list_t* arr, size_t index);
-
-arr_value using_custom(void* value, char* name, size_t size);
-arr_status arr_custom_unregister_type(char* type);
-arr_status arr_custom_register_type(char* type);
-
-arr_status arr_custom_provide_print(char* type, void(print)(const void* b));
-arr_status arr_custom_print(array_list_t* arr);
-
-arr_status arr_custom_provide_equals(char* type, int(comp)(const void* arr_v1, const void* arr_v2));
-int arr_custom_equals(array_list_t* arr1, array_list_t* arr2);
-arr_status arr_free(array_list_t* arr);
-
 int arr_get_size_of_element(array_list_t* arr);
 ARR_TYPE arr_get_type(array_list_t* arr);
 int arr_get_mem_capacity(array_list_t* arr);
 int arr_get_elements_capacity(array_list_t* arr);
 int arr_get_length(array_list_t* arr);
-
 arr_status arr_reverse(array_list_t* arr);
 arr_status arr_enable_auto_trim_on_trailing_null(array_list_t* arr);
 arr_status arr_disable_auto_trim_on_trailing_null(array_list_t* arr);
+arr_status arr_clear(array_list_t* arr);
+
+#include "array_list_t_types/base/array_list_t_base.h"
+#include "array_list_t_types/custom/array_list_t_custom.h"
+#include "array_list_t_types/unsafe/array_list_t_unsafe.h"
 
 #endif  // ARRAY_LIST_T_H
