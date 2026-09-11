@@ -103,7 +103,7 @@ arr_value using_null() {
 
 arr_status reallocate_array_value(array_list_t* arr, int new_cap) {
     void* tmp = realloc(arr->values, new_cap);
-    if (tmp == NULL) return ARR_MEMORY_FAULT; 
+    if (tmp == NULL) return ARR_MEMORY_FAULT;
     arr->values = tmp;
     arr->capacity = new_cap;
     return ARR_OK;
@@ -112,9 +112,10 @@ arr_status reallocate_array_value(array_list_t* arr, int new_cap) {
 arr_status check_memory_allocation(array_list_t* arr) {
     int expected_capcaity = (arr->length + 10) * arr->size_of_one_element;
     while (arr->capacity < expected_capcaity) {
-        int new_cap = arr->capacity / 2 + arr->capacity + 1; // + 1 in case the initial was somehow corrupted and was 0
+        int new_cap = arr->capacity / 2 + arr->capacity +
+                      1;  // + 1 in case the initial was somehow corrupted and was 0
         arr_status res = reallocate_array_value(arr, new_cap);
-        if(res != ARR_OK) return res;
+        if (res != ARR_OK) return res;
     }
     return ARR_OK;
 }
@@ -144,18 +145,6 @@ arr_status arr_clear_sector_or_set_null(void* target, size_t elem_size) {
 }
 
 /* =========== PUBLIC ===========*/
-array_list_t* arr_create(ARR_TYPE DataType) {
-    if (DataType == ARR_CUSTOM) {
-        fprintf(
-            stderr,
-            "Wrong arr type is provided. For custom types use arr_create_custom(). NULL returned");
-        return NULL;
-    }
-    array_list_t* arr = arr_allocate(DataType, arr_basic_capacity, map_sizes[DataType]);
-    if (arr == NULL) arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create");
-    return arr;
-}
-
 array_list_t* arr_create_greedy(ARR_TYPE DataType, int basic_capacity) {
     if (DataType == ARR_CUSTOM) {
         fprintf(
@@ -163,14 +152,24 @@ array_list_t* arr_create_greedy(ARR_TYPE DataType, int basic_capacity) {
             "Wrong arr type is provided. For custom types use arr_create_custom(). NULL returned");
         return NULL;
     }
+    if (DataType == ARR_UNSAFE) {
+        fprintf(
+            stderr,
+            "Wrong arr type is provided. For unsafe array use arr_create_unsafe(). NULL returned");
+        return NULL;
+    }
     array_list_t* arr = arr_allocate(DataType, basic_capacity, map_sizes[DataType]);
     if (arr == NULL) arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create");
     return arr;
 }
 
+array_list_t* arr_create(ARR_TYPE DataType) {
+    return arr_create_greedy(DataType, ARR_BASIC_CAPACITY);
+}
+
 array_list_t* arr_create_from_ints(int ints[], int len) {
     size_t element_size = map_sizes[ARR_INT];
-    array_list_t* arr = arr_allocate(ARR_INT, arr_basic_capacity, element_size);
+    array_list_t* arr = arr_allocate(ARR_INT, ARR_BASIC_CAPACITY, element_size);
     if (arr == NULL) {
         arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create from ints");
         return NULL;
@@ -182,7 +181,7 @@ array_list_t* arr_create_from_ints(int ints[], int len) {
 }
 
 array_list_t* arr_create_from_chars(char chars[], int len) {
-    array_list_t* arr = arr_allocate(ARR_CHAR, arr_basic_capacity, map_sizes[ARR_CHAR]);
+    array_list_t* arr = arr_allocate(ARR_CHAR, ARR_BASIC_CAPACITY, map_sizes[ARR_CHAR]);
     if (arr == NULL) {
         arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create from ints");
         return NULL;
@@ -194,7 +193,7 @@ array_list_t* arr_create_from_chars(char chars[], int len) {
 }
 
 array_list_t* arr_create_from_strings(char* strings[], int len) {
-    array_list_t* arr = arr_allocate(ARR_STRING, arr_basic_capacity, map_sizes[ARR_STRING]);
+    array_list_t* arr = arr_allocate(ARR_STRING, ARR_BASIC_CAPACITY, map_sizes[ARR_STRING]);
     if (arr == NULL) {
         arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create from ints");
         return NULL;
@@ -206,7 +205,7 @@ array_list_t* arr_create_from_strings(char* strings[], int len) {
 }
 
 array_list_t* arr_create_from_floats(float floats[], int len) {
-    array_list_t* arr = arr_allocate(ARR_FLOAT, arr_basic_capacity, map_sizes[ARR_FLOAT]);
+    array_list_t* arr = arr_allocate(ARR_FLOAT, ARR_BASIC_CAPACITY, map_sizes[ARR_FLOAT]);
     if (arr == NULL) {
         arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create from ints");
         return NULL;
@@ -218,7 +217,7 @@ array_list_t* arr_create_from_floats(float floats[], int len) {
 }
 
 array_list_t* arr_create_from_doubles(double doubles[], int len) {
-    array_list_t* arr = arr_allocate(ARR_DOUBLE, arr_basic_capacity, map_sizes[ARR_DOUBLE]);
+    array_list_t* arr = arr_allocate(ARR_DOUBLE, ARR_BASIC_CAPACITY, map_sizes[ARR_DOUBLE]);
     if (arr == NULL) {
         arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create from ints");
         return NULL;
@@ -230,7 +229,7 @@ array_list_t* arr_create_from_doubles(double doubles[], int len) {
 }
 
 array_list_t* arr_create_from_longs(long longs[], int len) {
-    array_list_t* arr = arr_allocate(ARR_LONG, arr_basic_capacity, map_sizes[ARR_LONG]);
+    array_list_t* arr = arr_allocate(ARR_LONG, ARR_BASIC_CAPACITY, map_sizes[ARR_LONG]);
     if (arr == NULL) {
         arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create from longs");
         return NULL;
@@ -242,7 +241,7 @@ array_list_t* arr_create_from_longs(long longs[], int len) {
 }
 
 array_list_t* arr_create_from_long_longs(long long longlongs[], int len) {
-    array_list_t* arr = arr_allocate(ARR_LONG_LONG, arr_basic_capacity, map_sizes[ARR_LONG_LONG]);
+    array_list_t* arr = arr_allocate(ARR_LONG_LONG, ARR_BASIC_CAPACITY, map_sizes[ARR_LONG_LONG]);
     if (arr == NULL) {
         arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create from long longs");
         return NULL;
@@ -255,7 +254,7 @@ array_list_t* arr_create_from_long_longs(long long longlongs[], int len) {
 
 array_list_t* arr_create_from_long_doubles(long double longdoubles[], int len) {
     array_list_t* arr =
-        arr_allocate(ARR_LONG_DOUBLE, arr_basic_capacity, map_sizes[ARR_LONG_DOUBLE]);
+        arr_allocate(ARR_LONG_DOUBLE, ARR_BASIC_CAPACITY, map_sizes[ARR_LONG_DOUBLE]);
     if (arr == NULL) {
         arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create from long doubles");
         return NULL;
@@ -267,7 +266,7 @@ array_list_t* arr_create_from_long_doubles(long double longdoubles[], int len) {
 }
 
 array_list_t* arr_create_from_shorts(short shorts[], int len) {
-    array_list_t* arr = arr_allocate(ARR_SHORT, arr_basic_capacity, map_sizes[ARR_SHORT]);
+    array_list_t* arr = arr_allocate(ARR_SHORT, ARR_BASIC_CAPACITY, map_sizes[ARR_SHORT]);
     if (arr == NULL) {
         arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create from shorts");
         return NULL;
@@ -695,7 +694,7 @@ arr_status arr_add(array_list_t* arr, arr_value arr_v) {
 
     if (type_v == ARR_NULL_VALUE) return ARR_INCONSISTENT_TYPE_PROVIDED;
 
-    if ((type_arr != type_v || type_arr == ARR_CUSTOM) && type_arr != ARR_VARIANT)
+    if ((type_arr != type_v || type_arr == ARR_CUSTOM || type_arr == ARR_UNSAFE) && type_arr != ARR_VARIANT)
         return ARR_INCONSISTENT_TYPE_PROVIDED;
     arr_status status = check_memory_allocation(arr);
     if (status != ARR_OK) return status;
@@ -716,7 +715,8 @@ arr_status arr_set(array_list_t* arr, arr_value arr_v, int index) {
         return ARR_OK;
     }
 
-    if ((type_arr != type_v || type_arr == ARR_CUSTOM) && type_arr != ARR_VARIANT)
+    if ((type_arr != type_v || type_arr == ARR_CUSTOM || type_arr == ARR_UNSAFE) &&
+        type_arr != ARR_VARIANT)
         return ARR_INCONSISTENT_TYPE_PROVIDED;
     arr_status status = check_memory_allocation(arr);
     if (status != ARR_OK) return status;
@@ -841,6 +841,7 @@ int arr_equals(array_list_t* arr1, array_list_t* arr2) {
     if (arr1->length != arr2->length) return 0;
     if (type != arr2->type) return 0;
     if (type == ARR_CUSTOM && !strcmp(arr1->custom_type, arr2->custom_type)) return 0;
+    if (type == ARR_UNSAFE) return 0;
     return arr_equals_map[type](arr1, arr2);
 }
 
@@ -1113,6 +1114,7 @@ ARR_TYPE arr_get_type(array_list_t* arr) {
     if (type == ARR_CUSTOM) printf("Custom type: %s", arr->custom_type);
     return type;
 };
+
 int arr_get_mem_capacity(array_list_t* arr) {
     arr_status st = arr_verify_array(arr, not_after_malloc);
     if (st != ARR_OK) {
@@ -1176,17 +1178,17 @@ arr_status arr_for_each(array_list_t* arr, void(fn)(void* value)) {
     return ARR_OK;
 }
 
-arr_status arr_clear(array_list_t* arr){
+arr_status arr_clear(array_list_t* arr) {
     arr_status st = arr_verify_array(arr, not_after_malloc);
     if (st != ARR_OK) {
         arr_handle_status(st);
         return st;
     }
-    if(arr->length == 0) return ARR_OK;
+    if (arr->length == 0) return ARR_OK;
     free(arr->values);
     arr->length = 0;
-    arr->capacity = arr->starting_capacity; 
-    arr->values = calloc(arr->starting_capacity,arr->size_of_one_element);
+    arr->capacity = arr->starting_capacity;
+    arr->values = calloc(arr->starting_capacity, arr->size_of_one_element);
     return ARR_OK;
 }
 

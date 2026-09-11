@@ -55,17 +55,19 @@ int get_type_id(char* type) {
 
 array_list_t* arr_create_custom(char* generic_name, size_t element_size) {
     if (is_type_registered(generic_name) == 0) {
-        char* message = arr_build_error_message_for_custom_types("Error: Custom array create for ", generic_name, NULL);
+        char* message = arr_build_error_message_for_custom_types("Error: Custom array create for ",
+                                                                 generic_name, NULL);
         arr_handle_internal_operation_status(ARR_CUSTOM_TYPE_IS_NOT_REGISTERED, message);
         free(message);
         return NULL;
     }
 
-    array_list_t* arr = arr_allocate(ARR_CUSTOM, arr_basic_capacity, element_size);
+    array_list_t* arr = arr_allocate(ARR_CUSTOM, ARR_BASIC_CAPACITY, element_size);
     arr_status status = arr_verify_array(arr, after_malloc);
 
     if (status != ARR_OK) {
-        char* message = arr_build_error_message_for_custom_types("Custom array create for ", generic_name, NULL);
+        char* message = arr_build_error_message_for_custom_types("Custom array create for ",
+                                                                 generic_name, NULL);
         arr_handle_internal_operation_status(status, message);
         free(message);
         return NULL;
@@ -77,7 +79,8 @@ array_list_t* arr_create_custom(char* generic_name, size_t element_size) {
 array_list_t* arr_create_custom_greedy(char* generic_name, size_t element_size,
                                        int basic_capacity) {
     if (is_type_registered(generic_name) == 0) {
-        char* message = arr_build_error_message_for_custom_types("Error: Custom array create for ", generic_name, NULL);
+        char* message = arr_build_error_message_for_custom_types("Error: Custom array create for ",
+                                                                 generic_name, NULL);
         arr_handle_internal_operation_status(ARR_CUSTOM_TYPE_IS_NOT_REGISTERED, message);
         free(message);
         return NULL;
@@ -87,7 +90,8 @@ array_list_t* arr_create_custom_greedy(char* generic_name, size_t element_size,
     arr_status status = arr_verify_array(arr, after_malloc);
 
     if (status != ARR_OK) {
-        char* message = arr_build_error_message_for_custom_types("Custom array create for ", generic_name, NULL);
+        char* message = arr_build_error_message_for_custom_types("Custom array create for ",
+                                                                 generic_name, NULL);
         arr_handle_internal_operation_status(status, message);
         free(message);
         return NULL;
@@ -109,6 +113,8 @@ arr_status arr_custom_unregister_type(char* type) {
     for (int i = 0; i < MAX_TYPES; i++) {
         if (strcmp(registered_types[i], type) == 0) {
             free(registered_types[i]);
+            registered_types[i]=NULL;
+            break;
         };
     }
     return ARR_OK;
@@ -124,7 +130,7 @@ arr_value using_custom(void* value, char* name, size_t size) {
     return arr_v;
 }
 
-arr_value arr_get_custom(array_list_t* arr, int index) {
+arr_value arr_custom_get(array_list_t* arr, int index) {
     arr_value val = {0};
     void* addres = arr_get_address_in_values(arr, index);
     if (addres == NULL) return val;
@@ -259,17 +265,19 @@ int arr_custom_equals(array_list_t* arr1, array_list_t* arr2) {
 array_list_t* arr_create_from_customs(void* values[], int len, char* generic_name,
                                       size_t element_size) {
     if (is_type_registered(generic_name) == 0) {
-        char* message = arr_build_error_message_for_custom_types("Error: Custom array create for ", generic_name, NULL);
+        char* message = arr_build_error_message_for_custom_types("Error: Custom array create for ",
+                                                                 generic_name, NULL);
         arr_handle_internal_operation_status(ARR_CUSTOM_TYPE_IS_NOT_REGISTERED, message);
         free(message);
         return NULL;
     }
 
-    array_list_t* arr = arr_allocate(ARR_CUSTOM, arr_basic_capacity, element_size);
+    array_list_t* arr = arr_allocate(ARR_CUSTOM, ARR_BASIC_CAPACITY, element_size);
     arr_status status = arr_verify_array(arr, after_malloc);
 
     if (status != ARR_OK) {
-        char* message = arr_build_error_message_for_custom_types("Custom array create for ", generic_name, NULL);
+        char* message = arr_build_error_message_for_custom_types("Custom array create for ",
+                                                                 generic_name, NULL);
         arr_handle_internal_operation_status(status, message);
         free(message);
         return NULL;

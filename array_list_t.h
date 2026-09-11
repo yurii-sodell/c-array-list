@@ -1,11 +1,11 @@
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 typedef struct array_list_t array_list_t;
 #ifndef ARRAY_LIST_T_H
 #define ARRAY_LIST_T_H
 
-#define arr_basic_capacity 1024
+#define ARR_BASIC_CAPACITY 1024
 #define types_supported 9
 
 #define has(status) arr_handle_status(status)
@@ -76,6 +76,7 @@ arr_status arr_reverse(array_list_t* arr);
 arr_status arr_enable_auto_trim_on_trailing_null(array_list_t* arr);
 arr_status arr_disable_auto_trim_on_trailing_null(array_list_t* arr);
 arr_status arr_clear(array_list_t* arr);
+void arr_handle_status(arr_status st);
 
 #include "array_list_t_types/base/array_list_t_base.h"
 #include "array_list_t_types/custom/array_list_t_custom.h"

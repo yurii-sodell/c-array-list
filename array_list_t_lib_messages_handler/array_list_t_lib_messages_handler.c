@@ -45,12 +45,13 @@ void arr_handle_internal_operation_status(arr_status st, char* additional_inform
             break;
         case ARR_EQUALS_IS_NOT_REGISTERED_FOR_THAT_TYPE:
             message =
-                "Error: comparing function (expected return values: -1, 0, 1) is not registered "
-                "for this type";
+                "Error: comparing function (expected return values: -1, 0, 1) is not registered for this type";
             break;
         case ARR_SIZES_OF_ARRAY_ELEMENT_AND_PROVIDED_ARE_DEFER:
             message = "Error: sizes of provided element and size of one array element are defer";
             break;
+        case ARR_UNSAFE_OPERATION_ON_SAFE_TYPE_CALLED:
+            message = "Error: unsafe method was called on safe type. Try to use the method that corresponds the type of array. (for example, arr_custom, arr_variant or arr_int)";
         default:
             message = "Unknown error has occured in array.";
             break;
@@ -78,10 +79,9 @@ void arr_handle_error_message_without_status(char* message) {
 char* arr_build_error_message_for_custom_types(char* source, char* type1, char* type2) {
     if (source == NULL || type1 == NULL)
         fprintf(stderr, "Error occured while constructing error messagge");
-    int to_alloc =
-        sizeof(source) + sizeof(type1) + (type2 == NULL ? 0 : sizeof(type2)) + sizeof(char) * 4;
+    int len = strlen(source) + strlen(type1) + (type2 == NULL ? 0 : strlen(type2)) + 4;
+    int to_alloc = len * sizeof(char);
     char* message = malloc(to_alloc);
-
     strcpy(message, source);
     if (type2 != NULL) {
         strcat(message, type1);
