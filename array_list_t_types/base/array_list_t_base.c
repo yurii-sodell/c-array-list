@@ -101,6 +101,7 @@ arr_value using_null() {
     return arr_v;
 };
 
+
 /*===============================================================================================*/
 
 arr_status reallocate_array_value(array_list_t* arr, int new_cap) {
@@ -163,6 +164,13 @@ array_list_t* arr_create_greedy(ARR_TYPE DataType, int basic_capacity) {
     array_list_t* arr = arr_allocate(DataType, basic_capacity, map_sizes[DataType]);
     if (arr == NULL) arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create");
     return arr;
+}
+
+array_list_t* arr_mark_sector_as_null(bool* nulls, int i){
+    *(nulls + i) = true; 
+}
+array_list_t* arr_mark_sector_as_not_null(bool* nulls, int i){
+    *(nulls + i) = false; 
 }
 
 array_list_t* arr_create(ARR_TYPE DataType) {
@@ -299,8 +307,7 @@ int is_sector_empty_or_null(void* target, size_t elem_size) {
 
 int is_slot_empty(array_list_t* arr, int id) {
     void* sector = arr_get_address_in_values(arr, id);
-    if (sector == NULL) return 1;
-    return is_sector_empty_or_null(sector, arr->size_of_one_element);
+    return *(arr->bit_mask_of_presence + id);
 }
 
 /*============================= PRINTIING OF ARRAY =============================*/
@@ -355,9 +362,7 @@ void arr_print_value(arr_value* arr_v) {
 void itterate_string(array_list_t* arr) {
     char** list = (char**)arr->values;
     for (size_t i = 0; i < arr->length; i++) {
-        void* memory_target = arr_get_address_in_values(arr, i);
-        char* x = is_sector_empty_or_null(memory_target, arr->size_of_one_element) != 1 ? list[i]
-                                                                                        : "null";
+        char* x = is_slot_empty(arr, i) != 1 ? list[i] : "null";
         printf("%s ", x);
         if (i + 1 != arr->length) printf(", ");
     }
@@ -365,8 +370,7 @@ void itterate_string(array_list_t* arr) {
 void itterate_int(array_list_t* arr) {
     int* list = (int*)arr->values;
     for (size_t i = 0; i < arr->length; i++) {
-        void* memory_target = arr_get_address_in_values(arr, i);
-        if (is_sector_empty_or_null(memory_target, arr->size_of_one_element) != 1) {
+        if (is_slot_empty(arr, i) != 1) {
             printf("%u", list[i]);
         } else {
             printf("%s", "null");
@@ -377,8 +381,7 @@ void itterate_int(array_list_t* arr) {
 void itterate_char(array_list_t* arr) {
     char* list = (char*)arr->values;
     for (size_t i = 0; i < arr->length; i++) {
-        void* memory_target = arr_get_address_in_values(arr, i);
-        if (is_sector_empty_or_null(memory_target, arr->size_of_one_element) != 1) {
+        if (is_slot_empty(arr, i) != 1) {
             printf("%c", list[i]);
         } else {
             printf("%s", "null");
@@ -386,11 +389,11 @@ void itterate_char(array_list_t* arr) {
         if (i + 1 != arr->length) printf(", ");
     }
 }
+
 void itterate_double(array_list_t* arr) {
     double* list = (double*)arr->values;
     for (size_t i = 0; i < arr->length; i++) {
-        void* memory_target = arr_get_address_in_values(arr, i);
-        if (is_sector_empty_or_null(memory_target, arr->size_of_one_element) != 1) {
+        if (is_slot_empty(arr, i) != 1) {
             printf("%f", list[i]);
         } else {
             printf("%s", "null");
@@ -398,11 +401,11 @@ void itterate_double(array_list_t* arr) {
         if (i + 1 != arr->length) printf(", ");
     }
 }
+
 void itterate_float(array_list_t* arr) {
     float* list = (float*)arr->values;
     for (size_t i = 0; i < arr->length; i++) {
-        void* memory_target = arr_get_address_in_values(arr, i);
-        if (is_sector_empty_or_null(memory_target, arr->size_of_one_element) != 1) {
+        if (is_slot_empty(arr, i) != 1) {
             printf("%f", list[i]);
         } else {
             printf("%s", "null");
@@ -414,8 +417,7 @@ void itterate_float(array_list_t* arr) {
 void itterate_long(array_list_t* arr) {
     long* list = (long*)arr->values;
     for (size_t i = 0; i < arr->length; i++) {
-        void* memory_target = arr_get_address_in_values(arr, i);
-        if (is_sector_empty_or_null(memory_target, arr->size_of_one_element) != 1) {
+        if (is_slot_empty(arr, i) != 1) {
             printf("%ld", list[i]);
         } else {
             printf("%s", "null");
@@ -427,8 +429,7 @@ void itterate_long(array_list_t* arr) {
 void itterate_long_long(array_list_t* arr) {
     long long* list = (long long*)arr->values;
     for (size_t i = 0; i < arr->length; i++) {
-        void* memory_target = arr_get_address_in_values(arr, i);
-        if (is_sector_empty_or_null(memory_target, arr->size_of_one_element) != 1) {
+        if (is_slot_empty(arr, i) != 1) {
             printf("%lld", list[i]);
         } else {
             printf("%s", "null");
@@ -440,8 +441,7 @@ void itterate_long_long(array_list_t* arr) {
 void itterate_long_double(array_list_t* arr) {
     long double* list = (long double*)arr->values;
     for (size_t i = 0; i < arr->length; i++) {
-        void* memory_target = arr_get_address_in_values(arr, i);
-        if (is_sector_empty_or_null(memory_target, arr->size_of_one_element) != 1) {
+        if (is_slot_empty(arr, i) != 1) {
             printf("%Lf", list[i]);
         } else {
             printf("%s", "null");
@@ -453,8 +453,7 @@ void itterate_long_double(array_list_t* arr) {
 void itterate_short(array_list_t* arr) {
     short* list = (short*)arr->values;
     for (size_t i = 0; i < arr->length; i++) {
-        void* memory_target = arr_get_address_in_values(arr, i);
-        if (is_sector_empty_or_null(memory_target, arr->size_of_one_element) != 1) {
+        if (is_slot_empty(arr, i) != 1) {
             printf("%hd", list[i]);
         } else {
             printf("%s", "null");
@@ -496,10 +495,12 @@ arr_status arr_init_map_prints() {
 arr_status arr_verify_array(array_list_t* arr, int aftermalloc) {
     arr_status status = aftermalloc == 1 ? ARR_MEMORY_FAULT : ARR_IS_NULL;
     if (arr == NULL) return status;
-    if (arr->values == NULL) return status;
     if (arr->length <= -1) return ARR_LENGTH_IS_CORRUPTED;
     if (arr->is_auto_shrink_on_tailing_nulls_enabled) arr_shrink_nullable_tail_if_possible(arr);
     if (arr->is_auto_shrink_on_inner_nulls_enabled) arr_shrink_inner_nulls_if_possible(arr);
+    if (arr->type == ARR_UNSAFE) return ARR_OK;
+
+    if (arr->values == NULL) return status;
     return ARR_OK;
 };
 
@@ -507,6 +508,8 @@ arr_status arr_verify_array(array_list_t* arr, int aftermalloc) {
 arr_status arr_print(array_list_t* arr) {
     arr_status st = arr_verify_array(arr, not_after_malloc);
     if (st != ARR_OK) return st;
+    if (arr->type == ARR_CUSTOM) return ARR_INCONSISTENT_TYPE_PROVIDED;
+    if (arr->type == ARR_UNSAFE) return ARR_SAFE_OPERATION_ON_UNSAFE_TYPE_CALLED;
     printf("\n[");
     arr_print_map[arr->type](arr);
     printf("]");
@@ -567,6 +570,7 @@ void set_variant(array_list_t* arr, arr_value arr_v, size_t index) {
 void set_null(array_list_t* arr, size_t index) {
     arr_clear_sector_or_set_null(arr->values + index * arr->size_of_one_element,
                                  arr->size_of_one_element);
+    arr_mark_sector_as_null(arr->bit_mask_of_presence, index);
 }
 
 void (*arr_set_map[types_supported])(array_list_t* arr, arr_value, size_t index);
@@ -588,15 +592,30 @@ arr_status arr_init_map_sets() {
 arr_status arr_delete(array_list_t* arr, size_t index) {
     arr_status st = arr_verify_array(arr, not_after_malloc);
     if (st != ARR_OK) return st;
+    if (arr->type == ARR_CUSTOM) return ARR_INCONSISTENT_TYPE_PROVIDED;
+    if (arr->type == ARR_UNSAFE) return ARR_SAFE_OPERATION_ON_UNSAFE_TYPE_CALLED;
     if (arr->length == 0) return ARR_OK;
 
     size_t elem_size = arr->size_of_one_element;
     void* target = arr_get_address_in_values(arr, index);
     if (target == NULL) return ARR_OUT_OF_BOUNDS;
     arr_clear_sector_or_set_null(target, elem_size);
+    arr_mark_sector_as_null(arr->bit_mask_of_presence, index);
     if (arr->is_auto_shrink_on_tailing_nulls_enabled) arr_shrink_nullable_tail_if_possible(arr);
     if (arr->is_auto_shrink_on_inner_nulls_enabled) arr_shrink_inner_nulls_if_possible(arr);
     return ARR_OK;
+}
+
+arr_status arr_print_bit_mask_of_presence(array_list_t* arr){
+    int x = arr->length;
+    bool* mask = arr->bit_mask_of_presence;
+    printf("\n[");
+    for(int i = 0; i < x; i++){
+        printf("%d", *(mask + i));
+        if(i != x - 1) printf(", ");
+    }
+
+    printf("]");
 }
 
 /* ================== PRIVATE ================== */
@@ -606,8 +625,7 @@ arr_status arr_shrink_nullable_tail_if_possible(array_list_t* arr) {
     int is_cleared = 0;
     int index = arr->length - 1;
     while (index == arr->length - 1 && arr->length != 0 && index != 0 && is_cleared != 1) {
-        void* target_to_shrink = arr_get_address_in_values(arr, index);
-        if (is_sector_empty_or_null(target_to_shrink, elem_size) != 1) {
+        if (is_slot_empty(arr, index) != 1) {
             is_cleared = 1;
         } else {
             arr->length--;
@@ -622,19 +640,21 @@ arr_status arr_shrink_inner_nulls_if_possible(array_list_t* arr) {
     int length_reducer = 0;
 
     for (int i = 0; i < len; i++) {
-        void* target_to_shrink = arr_get_address_in_values(arr, i);
-        if (is_sector_empty_or_null(target_to_shrink, elem_size) == 1) {
+        if (is_slot_empty(arr, i) == 1) {
+
             for (int b = i; b < len - 1; b++) {
                 void* current = arr_get_address_in_values(arr, b);
                 void* next = arr_get_address_in_values(arr, b + 1);
                 memmove(current, next, elem_size);
             }
+            arr_mark_sector_as_not_null(arr->bit_mask_of_presence, i);
             length_reducer++;
         }
     }
     for (int i = 0; i < length_reducer; i++) {
         void* target_to_clear = arr_get_address_in_values(arr, arr->length - 1);
         arr_clear_sector_or_set_null(target_to_clear, elem_size);
+        arr_mark_sector_as_null(arr->bit_mask_of_presence, arr->length -1);
         arr->length--;
     }
 }
@@ -687,6 +707,7 @@ void add_short(array_list_t* arr, arr_value arr_v) {
 void add_null(array_list_t* arr) {
     arr_clear_sector_or_set_null(arr->values + arr->length * arr->size_of_one_element,
                                  arr->size_of_one_element);
+    arr_mark_sector_as_null(arr->bit_mask_of_presence, arr->length);
 }
 
 void add_variant(array_list_t* arr, arr_value arr_v) {
@@ -711,6 +732,8 @@ arr_status arr_init_map_adds() {
 arr_status arr_add(array_list_t* arr, arr_value arr_v) {
     arr_status st = arr_verify_array(arr, not_after_malloc);
     if (st != ARR_OK) return st;
+    if (arr->type == ARR_CUSTOM) return ARR_INCONSISTENT_TYPE_PROVIDED;
+    if (arr->type == ARR_UNSAFE) return ARR_SAFE_OPERATION_ON_UNSAFE_TYPE_CALLED;
     ARR_TYPE type_v = arr_v.type;
     ARR_TYPE type_arr = arr->type;
     if (type_v == ARR_NULL_VALUE && type_arr == ARR_VARIANT) {
@@ -733,6 +756,8 @@ arr_status arr_add(array_list_t* arr, arr_value arr_v) {
 arr_status arr_set(array_list_t* arr, arr_value arr_v, int index) {
     arr_status st = arr_verify_array(arr, not_after_malloc);
     if (st != ARR_OK) return st;
+    if (arr->type == ARR_CUSTOM) return ARR_INCONSISTENT_TYPE_PROVIDED;
+    if (arr->type == ARR_UNSAFE) return ARR_SAFE_OPERATION_ON_UNSAFE_TYPE_CALLED;
     if (index < 0 || index > arr->length) return ARR_OUT_OF_BOUNDS;
 
     ARR_TYPE type_v = arr_v.type;
@@ -1127,7 +1152,6 @@ int arr_get_size_of_element(array_list_t* arr) {
         arr_handle_status(st);
         return 0;
     }
-
     return arr->size_of_one_element;
 };
 
@@ -1221,7 +1245,11 @@ arr_status arr_for_each(array_list_t* arr, void(fn)(void* value)) {
     int len = arr->length;
     void* values = arr->values;
     for (int i = 0; i < len; i++) {
-        fn(arr->values + i * arr->size_of_one_element);
+        if(!is_slot_empty(arr, i)){
+            fn(arr->values + i * arr->size_of_one_element);
+        }else{
+            fn(NULL);
+        }
     }
     return ARR_OK;
 }

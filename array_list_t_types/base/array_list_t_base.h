@@ -43,3 +43,4 @@ arr_value using_null();
 arr_status arr_delete(array_list_t* arr, size_t index);
 arr_status arr_for_each(array_list_t* arr, void(fn)(void* value));
 arr_status arr_free(array_list_t* arr);
+arr_status arr_print_bit_mask_of_presence(array_list_t* arr);

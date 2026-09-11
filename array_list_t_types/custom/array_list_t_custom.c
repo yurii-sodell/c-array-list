@@ -210,15 +210,18 @@ arr_status arr_custom_print(array_list_t* arr) {
 
     void (*func)(const void*) = provided_prints[get_type_id(arr->custom_type)];
 
-    for (int i = 0; i < arr->length; i++) {
+    int len = arr->length;
+    printf("[");
+    for (int i = 0; i < len; i++) {
         if (is_slot_empty(arr, i) == 1) {
             printf("\n%s", "null");
         } else {
             void* value = arr->values + i * arr->size_of_one_element;
             func(value);
         }
+        if(i != len - 1) printf(", ");
     }
-
+    printf("]\n");
     return ARR_OK;
 }
 

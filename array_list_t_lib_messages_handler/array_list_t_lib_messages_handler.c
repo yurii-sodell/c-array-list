@@ -45,15 +45,23 @@ void arr_handle_internal_operation_status(arr_status st, char* additional_inform
             break;
         case ARR_EQUALS_IS_NOT_REGISTERED_FOR_THAT_TYPE:
             message =
-                "Error: comparing function (expected return values: -1, 0, 1) is not registered for this type";
+                "Error: comparing function (expected return values: -1, 0, 1) is not registered "
+                "for this type";
             break;
         case ARR_SIZES_OF_ARRAY_ELEMENT_AND_PROVIDED_ARE_DEFER:
             message = "Error: sizes of provided element and size of one array element are defer";
             break;
         case ARR_UNSAFE_OPERATION_ON_SAFE_TYPE_CALLED:
-            message = "Error: unsafe method was called on safe type. Try to use the method that corresponds the type of array. (for example, arr_custom, arr_variant or arr_int)";
+            message =
+                "Error: unsafe method was called on safe type. Try to use the method that "
+                "corresponds the type of array. (for example, arr_custom, arr_variant or arr_int)";
+            break;
+        case ARR_SAFE_OPERATION_ON_UNSAFE_TYPE_CALLED:
+            message =
+                "Error: safe method was called on unsafe type. Try to use unsafe method such (for example arr_unsafe_add, arr_unsafe_get)";
+        break;
         default:
-            message = "Unknown error has occured in array.";
+            message = "Unknown error has occured in array";
             break;
     }
 
@@ -64,15 +72,14 @@ void arr_handle_internal_operation_status(arr_status st, char* additional_inform
     }
 }
 
-void arr_handle_status(arr_status st) {
-    arr_handle_internal_operation_status(st, NULL);
-}
+void arr_handle_status(arr_status st) { arr_handle_internal_operation_status(st, NULL); }
 
 void arr_handle_error_message_without_status(char* message) {
     if (message != NULL) {
         fprintf(stderr, "\n%s", message);
     } else {
-        fprintf(stderr, "\nError message handler was called but no message was provided. ", message);
+        fprintf(stderr, "\nError message handler was called but no message was provided. ",
+                message);
     }
 }
 
