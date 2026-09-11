@@ -6,7 +6,6 @@ typedef struct array_list_t array_list_t;
 #define ARRAY_LIST_T_H
 
 #define ARR_BASIC_CAPACITY 1024
-#define types_supported 9
 
 #define has(status) arr_handle_status(status)
 
@@ -20,10 +19,11 @@ typedef enum {
     ARR_CHAR,         // 6
     ARR_DOUBLE,       // 7
     ARR_FLOAT,        // 8
-    ARR_VARIANT,      // 9
-    ARR_CUSTOM,       // 10
-    ARR_NULL_VALUE,   // 11
-    ARR_UNSAFE        // 12
+    ARR_BOOLEAN,      // 9
+    ARR_NULL_VALUE,   // 10
+    ARR_VARIANT,      // 11
+    ARR_CUSTOM,       // 12
+    ARR_UNSAFE        // 13
 } ARR_TYPE;
 
 typedef struct arr_value {
@@ -39,6 +39,7 @@ typedef struct arr_value {
         long long long_long_v;
         long double long_double_v;
         short short_v;
+        bool bool_v;
     } basic_value;
 
     ARR_TYPE type;

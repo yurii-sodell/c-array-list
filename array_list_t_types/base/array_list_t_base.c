@@ -94,13 +94,19 @@ arr_value using_short(short s) {
     return arr_v;
 }
 
+arr_value using_boolean(bool b) {
+    arr_value arr_v;
+    arr_v.type = ARR_BOOLEAN;
+    arr_v.basic_value.bool_v = b;
+    return arr_v;
+}
+
 arr_value using_null() {
     arr_value arr_v;
     arr_v.type = ARR_NULL_VALUE;
     arr_v.custom_value = NULL;
     return arr_v;
-};
-
+}
 
 /*===============================================================================================*/
 
@@ -137,6 +143,7 @@ void arr_init_map_sizes() {
     map_sizes[ARR_LONG_LONG] = sizeof(long long);
     map_sizes[ARR_LONG_DOUBLE] = sizeof(long double);
     map_sizes[ARR_SHORT] = sizeof(short);
+    map_sizes[ARR_BOOLEAN] = sizeof(bool);
 }
 /*============================= ADDING VALUE TO ARRAY =============================*/
 arr_status arr_clear_sector_or_set_null(void* target, size_t elem_size) {
@@ -166,12 +173,8 @@ array_list_t* arr_create_greedy(ARR_TYPE DataType, int basic_capacity) {
     return arr;
 }
 
-array_list_t* arr_mark_sector_as_null(bool* nulls, int i){
-    *(nulls + i) = true; 
-}
-array_list_t* arr_mark_sector_as_not_null(bool* nulls, int i){
-    *(nulls + i) = false; 
-}
+array_list_t* arr_mark_sector_as_null(bool* nulls, int i) { *(nulls + i) = true; }
+array_list_t* arr_mark_sector_as_not_null(bool* nulls, int i) { *(nulls + i) = false; }
 
 array_list_t* arr_create(ARR_TYPE DataType) {
     return arr_create_greedy(DataType, ARR_BASIC_CAPACITY);
@@ -275,6 +278,18 @@ array_list_t* arr_create_from_long_doubles(long double longdoubles[], int len) {
     return arr;
 }
 
+array_list_t* arr_create_from_booleans(bool booleans[], int len) {
+    array_list_t* arr = arr_allocate(ARR_BOOLEAN, ARR_BASIC_CAPACITY, map_sizes[ARR_BOOLEAN]);
+    if (arr == NULL) {
+        arr_handle_internal_operation_status(ARR_MEMORY_FAULT, "Array create from booleans");
+        return NULL;
+    }
+    for (int i = 0; i < len; i++) {
+        arr_add(arr, using_boolean(booleans[i]));
+    }
+    return arr;
+}
+
 array_list_t* arr_create_from_shorts(short shorts[], int len) {
     array_list_t* arr = arr_allocate(ARR_SHORT, ARR_BASIC_CAPACITY, map_sizes[ARR_SHORT]);
     if (arr == NULL) {
@@ -344,6 +359,9 @@ void print_arr_value(arr_value* arr_v) {
             break;
         case ARR_SHORT:
             printf("%hd", arr_v->basic_value.short_v);
+            break;
+        case ARR_BOOLEAN:
+            printf("%s", arr_v->basic_value.bool_v ? "true" : "false");
             break;
         case ARR_NULL_VALUE:
             printf("NULL");
@@ -462,6 +480,18 @@ void itterate_short(array_list_t* arr) {
     }
 }
 
+void itterate_boolean(array_list_t* arr) {
+    bool* list = (bool*)arr->values;
+    for (size_t i = 0; i < arr->length; i++) {
+        if (is_slot_empty(arr, i) != 1) {
+            printf("%s", list[i] ? "true" : "false");
+        } else {
+            printf("%s", "null");
+        }
+        if (i + 1 != arr->length) printf(", ");
+    }
+}
+
 arr_value arr_get_variant(array_list_t* arr, int index);
 
 void itterate_variant(array_list_t* arr) {
@@ -489,6 +519,7 @@ arr_status arr_init_map_prints() {
     arr_print_map[ARR_LONG_LONG] = itterate_long_long;
     arr_print_map[ARR_LONG_DOUBLE] = itterate_long_double;
     arr_print_map[ARR_SHORT] = itterate_short;
+    arr_print_map[ARR_BOOLEAN] = itterate_boolean;
     arr_print_map[ARR_VARIANT] = itterate_variant;
 }
 
@@ -573,6 +604,11 @@ void set_null(array_list_t* arr, size_t index) {
     arr_mark_sector_as_null(arr->bit_mask_of_presence, index);
 }
 
+void set_boolean(array_list_t* arr, arr_value arr_v, size_t index) {
+    bool* target_boolean = (bool*)arr->values;
+    target_boolean[index] = arr_v.basic_value.bool_v;
+}
+
 void (*arr_set_map[types_supported])(array_list_t* arr, arr_value, size_t index);
 arr_status arr_init_map_sets() {
     arr_set_map[ARR_INT] = set_int;
@@ -584,6 +620,7 @@ arr_status arr_init_map_sets() {
     arr_set_map[ARR_LONG_LONG] = set_long_long;
     arr_set_map[ARR_LONG_DOUBLE] = set_long_double;
     arr_set_map[ARR_SHORT] = set_short;
+    arr_set_map[ARR_BOOLEAN] = set_boolean;
     arr_set_map[ARR_VARIANT] = set_variant;
 }
 
@@ -606,13 +643,13 @@ arr_status arr_delete(array_list_t* arr, size_t index) {
     return ARR_OK;
 }
 
-arr_status arr_print_bit_mask_of_presence(array_list_t* arr){
+arr_status arr_print_bit_mask_of_presence(array_list_t* arr) {
     int x = arr->length;
     bool* mask = arr->bit_mask_of_presence;
     printf("\n[");
-    for(int i = 0; i < x; i++){
+    for (int i = 0; i < x; i++) {
         printf("%d", *(mask + i));
-        if(i != x - 1) printf(", ");
+        if (i != x - 1) printf(", ");
     }
 
     printf("]");
@@ -639,24 +676,29 @@ arr_status arr_shrink_inner_nulls_if_possible(array_list_t* arr) {
     int len = arr->length;
     int length_reducer = 0;
 
-    for (int i = 0; i < len; i++) {
-        if (is_slot_empty(arr, i) == 1) {
+    bool is_clearing_allowed = false;
 
-            for (int b = i; b < len - 1; b++) {
-                void* current = arr_get_address_in_values(arr, b);
-                void* next = arr_get_address_in_values(arr, b + 1);
-                memmove(current, next, elem_size);
+    for (int i = len-1; i >= 0; i--) {
+        if (is_slot_empty(arr, i) == 1) {
+            if (is_clearing_allowed) {
+                for (int b = i; b < len - 1; b++) {
+                    void* current = arr_get_address_in_values(arr, b);
+                    void* next = arr_get_address_in_values(arr, b + 1);
+                    memmove(current, next, elem_size);
+                }
+                arr_mark_sector_as_not_null(arr->bit_mask_of_presence, i);
+                length_reducer++;
             }
-            arr_mark_sector_as_not_null(arr->bit_mask_of_presence, i);
-            length_reducer++;
+            is_clearing_allowed = true;
         }
     }
-    for (int i = 0; i < length_reducer; i++) {
-        void* target_to_clear = arr_get_address_in_values(arr, arr->length - 1);
-        arr_clear_sector_or_set_null(target_to_clear, elem_size);
-        arr_mark_sector_as_null(arr->bit_mask_of_presence, arr->length -1);
-        arr->length--;
-    }
+
+for (int i = 0; i < length_reducer; i++) {
+    void* target_to_clear = arr_get_address_in_values(arr, arr->length - 1);
+    arr_clear_sector_or_set_null(target_to_clear, elem_size);
+    arr_mark_sector_as_null(arr->bit_mask_of_presence, arr->length - 1);
+    arr->length--;
+}
 }
 
 void add_int(array_list_t* arr, arr_value arr_v) {
@@ -704,6 +746,11 @@ void add_short(array_list_t* arr, arr_value arr_v) {
     target_short[arr->length] = arr_v.basic_value.short_v;
 }
 
+void add_boolean(array_list_t* arr, arr_value arr_v) {
+    bool* target_boolean = (bool*)arr->values;
+    target_boolean[arr->length] = arr_v.basic_value.bool_v;
+}
+
 void add_null(array_list_t* arr) {
     arr_clear_sector_or_set_null(arr->values + arr->length * arr->size_of_one_element,
                                  arr->size_of_one_element);
@@ -726,6 +773,7 @@ arr_status arr_init_map_adds() {
     arr_add_map[ARR_LONG_LONG] = add_long_long;
     arr_add_map[ARR_LONG_DOUBLE] = add_long_double;
     arr_add_map[ARR_SHORT] = add_short;
+    arr_add_map[ARR_BOOLEAN] = add_boolean;
     arr_add_map[ARR_VARIANT] = add_variant;
 }
 
@@ -871,6 +919,16 @@ int arr_equals_short(array_list_t* arr1, array_list_t* arr2) {
     return 1;
 }
 
+int arr_equals_boolean(array_list_t* arr1, array_list_t* arr2) {
+    int len = arr1->length;
+    for (size_t i = 0; i < len; i++) {
+        bool v1 = ((bool*)arr1->values)[i];
+        bool v2 = ((bool*)arr2->values)[i];
+        if (v1 != v2) return 0;
+    }
+    return 1;
+}
+
 int arr_equals_variant(array_list_t* arr1, array_list_t* arr2) {}
 
 int (*arr_equals_map[types_supported])(array_list_t* arr1, array_list_t* arr2);
@@ -884,6 +942,7 @@ int arr_init_map_equals() {
     arr_equals_map[ARR_LONG_LONG] = arr_equals_long_long;
     arr_equals_map[ARR_LONG_DOUBLE] = arr_equals_long_double;
     arr_equals_map[ARR_SHORT] = arr_equals_short;
+    arr_equals_map[ARR_BOOLEAN] = arr_equals_boolean;
     arr_equals_map[ARR_SHORT] = arr_equals_variant;
 }
 
@@ -1054,6 +1113,24 @@ arr_value arr_get_short(array_list_t* arr, int index) {
     void* addres = arr_get_address_in_values(arr, index);
     if (addres == NULL) return val;
     val = using_short(*(short*)addres);
+    return val;
+}
+
+arr_value arr_get_boolean(array_list_t* arr, int index) {
+    arr_value val = {0};
+    char* operation_name = "Array get boolean";
+    arr_status st = arr_verify_array(arr, not_after_malloc);
+    if (st != ARR_OK) {
+        arr_handle_internal_operation_status(st, operation_name);
+        return val;
+    }
+    if (arr->type != ARR_BOOLEAN) {
+        arr_handle_internal_operation_status(ARR_INCONSISTENT_TYPE_PROVIDED, operation_name);
+        return val;
+    }
+    void* addres = arr_get_address_in_values(arr, index);
+    if (addres == NULL) return val;
+    val = using_boolean(*(bool*)addres);
     return val;
 }
 
@@ -1245,9 +1322,9 @@ arr_status arr_for_each(array_list_t* arr, void(fn)(void* value)) {
     int len = arr->length;
     void* values = arr->values;
     for (int i = 0; i < len; i++) {
-        if(!is_slot_empty(arr, i)){
+        if (!is_slot_empty(arr, i)) {
             fn(arr->values + i * arr->size_of_one_element);
-        }else{
+        } else {
             fn(NULL);
         }
     }
