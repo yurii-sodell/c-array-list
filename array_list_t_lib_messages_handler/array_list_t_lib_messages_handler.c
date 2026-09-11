@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../array_list_t_accesability/array_list_t_shared.h"
+#include "../array_list_t_accesability/array_list_t_private_shared.h"
 
 void arr_handle_internal_operation_status(arr_status st, char* additional_information) {
     if (st == ARR_OK) return;

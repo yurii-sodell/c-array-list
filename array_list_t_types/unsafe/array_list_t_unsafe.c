@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include "../../array_list_t.h"
-#include "../../array_list_t_accesability/array_list_t_shared.h"
+#include "../../array_list_t_accesability/array_list_t_private_shared.h"
 
 array_list_t* arr_create_unsafe(int len, int element_size) {
     array_list_t* arr = arr_allocate(ARR_UNSAFE, len, element_size);

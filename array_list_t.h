@@ -73,8 +73,12 @@ int arr_get_mem_capacity(array_list_t* arr);
 int arr_get_elements_capacity(array_list_t* arr);
 int arr_get_length(array_list_t* arr);
 arr_status arr_reverse(array_list_t* arr);
-arr_status arr_enable_auto_trim_on_trailing_null(array_list_t* arr);
-arr_status arr_disable_auto_trim_on_trailing_null(array_list_t* arr);
+arr_status arr_enable_auto_trim_on_trailing_nulls(array_list_t* arr);
+arr_status arr_disable_auto_trim_on_trailing_nulls(array_list_t* arr);
+
+arr_status arr_enable_auto_trim_on_inner_nulls(array_list_t* arr);
+arr_status arr_disable_auto_trim_on_inner_nulls(array_list_t* arr);
+
 arr_status arr_clear(array_list_t* arr);
 void arr_handle_status(arr_status st);
 

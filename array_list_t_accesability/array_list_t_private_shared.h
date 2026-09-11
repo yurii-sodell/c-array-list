@@ -22,7 +22,8 @@ typedef struct array_list_t {
     void* values;
     ARR_TYPE type;
     char* custom_type;
-    bool is_auto_shrink_enabled;
+    bool is_auto_shrink_on_tailing_nulls_enabled;
+    bool is_auto_shrink_on_inner_nulls_enabled;
     bool* bit_mask_of_presence;
 } array_list_t;
 
@@ -36,4 +37,4 @@ int is_slot_empty(array_list_t* arr, int id);
 // for unsafe, defined in base
 arr_status reallocate_array_value(array_list_t* arr, int new_capacity);
 
-#endif //ARRAY_LIST_T_SHARED_H
+#endif  // ARRAY_LIST_T_SHARED_H

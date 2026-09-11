@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include "../../array_list_t.h"
-#include "../../array_list_t_accesability/array_list_t_shared.h"
+#include "../../array_list_t_accesability/array_list_t_private_shared.h"
 
 #define MAX_TYPES 64
 char* registered_types[MAX_TYPES];

@@ -4,10 +4,11 @@
 #include <string.h>
 
 #include "../../array_list_t.h"
-#include "../../array_list_t_accesability/array_list_t_shared.h"
+#include "../../array_list_t_accesability/array_list_t_private_shared.h"
 
 /*============================= BASIC CHECK BEFORE ANY OPERATION =============================*/
-arr_status arr_shrink_if_possible(array_list_t* arr);
+arr_status arr_shrink_nullable_tail_if_possible(array_list_t* arr);
+arr_status arr_shrink_inner_nulls_if_possible(array_list_t* arr);
 
 /* ============================= CREATION OF ARRAY =============================*/
 /* =================== PRIVATE FOR USER. SHARED WITH CUSTOM. ===================*/
@@ -22,7 +23,8 @@ array_list_t* arr_allocate(ARR_TYPE DataType, int capacity, int element_size) {
     arr->size_of_one_element = element_size;
     arr->values = calloc(capacity, element_size);
     arr->custom_type = NULL;
-    arr->is_auto_shrink_enabled = false;
+    arr->is_auto_shrink_on_tailing_nulls_enabled = false;
+    arr->is_auto_shrink_on_inner_nulls_enabled = false;
     arr->bit_mask_of_presence = calloc(capacity, sizeof(bool));
     return arr;
 }
@@ -496,7 +498,8 @@ arr_status arr_verify_array(array_list_t* arr, int aftermalloc) {
     if (arr == NULL) return status;
     if (arr->values == NULL) return status;
     if (arr->length <= -1) return ARR_LENGTH_IS_CORRUPTED;
-    if (arr->is_auto_shrink_enabled) arr_shrink_if_possible(arr);
+    if (arr->is_auto_shrink_on_tailing_nulls_enabled) arr_shrink_nullable_tail_if_possible(arr);
+    if (arr->is_auto_shrink_on_inner_nulls_enabled) arr_shrink_inner_nulls_if_possible(arr);
     return ARR_OK;
 };
 
@@ -591,13 +594,14 @@ arr_status arr_delete(array_list_t* arr, size_t index) {
     void* target = arr_get_address_in_values(arr, index);
     if (target == NULL) return ARR_OUT_OF_BOUNDS;
     arr_clear_sector_or_set_null(target, elem_size);
-    if (arr->is_auto_shrink_enabled) arr_shrink_if_possible(arr);
+    if (arr->is_auto_shrink_on_tailing_nulls_enabled) arr_shrink_nullable_tail_if_possible(arr);
+    if (arr->is_auto_shrink_on_inner_nulls_enabled) arr_shrink_inner_nulls_if_possible(arr);
     return ARR_OK;
 }
 
 /* ================== PRIVATE ================== */
 
-arr_status arr_shrink_if_possible(array_list_t* arr) {
+arr_status arr_shrink_nullable_tail_if_possible(array_list_t* arr) {
     size_t elem_size = arr->size_of_one_element;
     int is_cleared = 0;
     int index = arr->length - 1;
@@ -609,6 +613,29 @@ arr_status arr_shrink_if_possible(array_list_t* arr) {
             arr->length--;
             index--;
         };
+    }
+}
+
+arr_status arr_shrink_inner_nulls_if_possible(array_list_t* arr) {
+    size_t elem_size = arr->size_of_one_element;
+    int len = arr->length;
+    int length_reducer = 0;
+
+    for (int i = 0; i < len; i++) {
+        void* target_to_shrink = arr_get_address_in_values(arr, i);
+        if (is_sector_empty_or_null(target_to_shrink, elem_size) == 1) {
+            for (int b = i; b < len - 1; b++) {
+                void* current = arr_get_address_in_values(arr, b);
+                void* next = arr_get_address_in_values(arr, b + 1);
+                memmove(current, next, elem_size);
+            }
+            length_reducer++;
+        }
+    }
+    for (int i = 0; i < length_reducer; i++) {
+        void* target_to_clear = arr_get_address_in_values(arr, arr->length - 1);
+        arr_clear_sector_or_set_null(target_to_clear, elem_size);
+        arr->length--;
     }
 }
 
@@ -694,7 +721,8 @@ arr_status arr_add(array_list_t* arr, arr_value arr_v) {
 
     if (type_v == ARR_NULL_VALUE) return ARR_INCONSISTENT_TYPE_PROVIDED;
 
-    if ((type_arr != type_v || type_arr == ARR_CUSTOM || type_arr == ARR_UNSAFE) && type_arr != ARR_VARIANT)
+    if ((type_arr != type_v || type_arr == ARR_CUSTOM || type_arr == ARR_UNSAFE) &&
+        type_arr != ARR_VARIANT)
         return ARR_INCONSISTENT_TYPE_PROVIDED;
     arr_status status = check_memory_allocation(arr);
     if (status != ARR_OK) return status;
@@ -1144,24 +1172,44 @@ int arr_get_length(array_list_t* arr) {
 };
 
 //============================= ARR BEHAVIOUR ================================== //
-arr_status arr_enable_auto_trim_on_trailing_null(array_list_t* arr) {
+arr_status arr_enable_auto_trim_on_trailing_nulls(array_list_t* arr) {
     arr_status st = arr_verify_array(arr, not_after_malloc);
     if (st != ARR_OK) {
         arr_handle_status(st);
         return st;
     }
-    arr->is_auto_shrink_enabled = true;
-    arr_shrink_if_possible(arr);
+    arr->is_auto_shrink_on_tailing_nulls_enabled = true;
+    arr_shrink_nullable_tail_if_possible(arr);
     return ARR_OK;
 };
-arr_status arr_disable_auto_trim_on_trailing_null(array_list_t* arr) {
+arr_status arr_disable_auto_trim_on_trailing_nulls(array_list_t* arr) {
     arr_status st = arr_verify_array(arr, not_after_malloc);
     if (st != ARR_OK) {
         arr_handle_status(st);
         return st;
     }
-    arr->is_auto_shrink_enabled = false;
+    arr->is_auto_shrink_on_tailing_nulls_enabled = false;
     return ARR_OK;
+};
+
+arr_status arr_enable_auto_trim_on_inner_nulls(array_list_t* arr) {
+    arr_status st = arr_verify_array(arr, not_after_malloc);
+    if (st != ARR_OK) {
+        arr_handle_status(st);
+        return st;
+    }
+    arr->is_auto_shrink_on_inner_nulls_enabled = true;
+    arr_shrink_inner_nulls_if_possible(arr);
+    return ARR_OK;
+};
+
+arr_status arr_disable_auto_trim_on_inner_nulls(array_list_t* arr) {
+    arr_status st = arr_verify_array(arr, not_after_malloc);
+    if (st != ARR_OK) {
+        arr_handle_status(st);
+        return st;
+    }
+    arr->is_auto_shrink_on_inner_nulls_enabled = false;
 };
 
 arr_status arr_for_each(array_list_t* arr, void(fn)(void* value)) {
